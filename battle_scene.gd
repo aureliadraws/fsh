@@ -1,6 +1,6 @@
 extends Node2D
 ## Battle Scene - combines boat background with battle UI
-## Updated for Hook, Line & Sinker design
+## Updated for Hook, Line & Sinker design with Fixes
 
 signal battle_finished(victory: bool, rewards: Dictionary)
 
@@ -32,7 +32,7 @@ func _connect_battle_signals() -> void:
 	if battle_board:
 		battle_manager = battle_board.get_node_or_null("BattleManager")
 	
-	if battle_manager:
+	if battle_manager and is_instance_valid(battle_manager):
 		# Check if the signals exist before trying to connect
 		if battle_manager.has_signal("battle_won"):
 			# Disconnect any existing connections first to prevent duplicates
@@ -100,7 +100,7 @@ func start_battle(deck: Array, enemies: Array, boat_health: int = 3, p_rod_stren
 			battle_manager = battle_board.get_node_or_null("BattleManager")
 		_connect_battle_signals()
 	
-	if battle_manager:
+	if battle_manager and is_instance_valid(battle_manager):
 		# Check if script is loaded by checking for the method
 		if battle_manager.has_method("start_battle"):
 			battle_manager.start_battle(deck, enemies, boat_health, p_rod_strength, p_hook_cooldown_max)
@@ -150,8 +150,7 @@ func _on_battle_won(catch_hold: Array) -> void:
 	# Delay before emitting to let player see victory message
 	await get_tree().create_timer(2.0).timeout
 	
-	if not _battle_result_emitted:
-		return  # Safety check in case something changed
+	if not is_inside_tree(): return
 	
 	battle_finished.emit(true, rewards)
 
@@ -173,17 +172,17 @@ func _on_battle_lost() -> void:
 	
 	# Safety: check tree before await
 	if not is_inside_tree():
-		battle_finished.emit(false, rewards)
+		# If we are already exiting, just emit immediately if needed or skip
 		return
+		
 	var tree = get_tree()
 	if tree == null:
-		battle_finished.emit(false, rewards)
 		return
 	
 	await tree.create_timer(2.0).timeout
 	
 	# Safety check after await
-	if not _battle_result_emitted or not is_inside_tree():
+	if not is_inside_tree():
 		return
 	
 	battle_finished.emit(false, rewards)

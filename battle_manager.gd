@@ -26,6 +26,7 @@ signal hook_used
 signal hook_cooldown_tick(turns_remaining: int)
 
 signal catch_qte_triggered(slot: int, fish_data, remaining_line: int)
+signal qte_resolved # NEW: Signal to break wait loops safely
 signal battle_won(catch_hold: Array)
 signal battle_lost
 signal draw_state_changed(can_draw: bool)
@@ -83,6 +84,7 @@ var flee_blocked: bool = false
 
 # SAFETY FLAGS
 var _defeat_triggered: bool = false
+var _processing_death: bool = false # Guard against recursive death logic
 
 # ==========================================
 # INITIALIZATION
@@ -101,6 +103,7 @@ func _ready() -> void:
 func start_battle(deck: Array, enemies: Array, boat_health: int = 3, p_rod_strength: int = 2, p_hook_cooldown_max: int = 3) -> void:
 	print("DEBUG: Starting Battle")
 	_defeat_triggered = false
+	_processing_death = false
 	battle_active = true
 	
 	if has_node("/root/MusicController"):
@@ -321,6 +324,10 @@ func _fish_attack_animated(slot: int) -> void:
 	for atk_num in attacks:
 		if _defeat_triggered or not battle_active: return
 		
+		# Re-verify fish exists before second attack
+		fish = fish_slots[slot]
+		if fish == null: return 
+		
 		var target_slot := _find_nearest_player_card(slot)
 		var attacks_boat := false
 		
@@ -347,6 +354,7 @@ func _fish_attack_animated(slot: int) -> void:
 			print("DEBUG: Fish attacking card | Target Slot:", target_slot)
 			if fish_data.sinker == "Consume":
 				var target_card = player_cards[target_slot]
+				# Check card exists again
 				if target_card != null and target_card.current_line <= fish_data.hook:
 					_destroy_card(target_slot)
 				else:
@@ -375,6 +383,7 @@ func _process_player_attacks_animated() -> void:
 	
 	for card_slot in player_card_slots:
 		if _defeat_triggered or not battle_active: return
+		if not is_inside_tree(): return
 		
 		var card = player_cards[card_slot]
 		if card == null: continue
@@ -410,31 +419,27 @@ func _process_player_attacks_animated() -> void:
 		
 		_damage_fish(target_fish_slot, damage)
 		
+		# QTE CHECK 1: If damage caused a catch QTE, wait for it to resolve
+		if awaiting_qte:
+			print("DEBUG: Awaiting QTE resolution during attack...")
+			await qte_resolved
+			if _defeat_triggered or not battle_active: return
+
 		if fish_slots[target_fish_slot] != null:
 			_process_card_sinker_ability(card_slot, card_data, target_fish_slot)
 		
 		player_attack_finished.emit(card_slot)
 		
-		# === FIX FOR INFINITE LOOP ===
-		# Use a timer that processes even when the game is paused (e.g., during QTEs).
-		# Check if we are still in the tree to prevent hangs if scene changes.
-		var safety_timer = 0
-		while awaiting_qte:
-			if not is_inside_tree(): return
-			
-			# process_always=true ensures this ticks even if the game is paused by the QTE
-			await get_tree().create_timer(0.1, true, false, true).timeout
-			
-			safety_timer += 1
-			if _defeat_triggered: return
-			if safety_timer > 100:
-				awaiting_qte = false
-				print("ERROR: QTE timed out, forcing progress.")
-				break
+		# QTE CHECK 2: If ability caused a catch QTE, wait for it to resolve
+		if awaiting_qte:
+			print("DEBUG: Awaiting QTE resolution after ability...")
+			await qte_resolved
+			if _defeat_triggered or not battle_active: return
 			
 		await get_tree().create_timer(0.15).timeout
 		if _defeat_triggered or not battle_active: return
 		
+		# Handle Thorns/Venomous AFTER QTEs
 		if player_cards[card_slot] != null: 
 			fish = fish_slots[target_fish_slot]
 			if fish != null and fish.data.sinker == "Venomous":
@@ -446,7 +451,9 @@ func _damage_card(slot: int, damage: int) -> void:
 	print("DEBUG: _damage_card called | Slot:", slot, " | Damage:", damage)
 	if not is_inside_tree() or _defeat_triggered: return
 	if slot < 0 or slot >= NUM_SLOTS: return
+	
 	var card = player_cards[slot]
+	# Strict null check
 	if card == null:
 		print("DEBUG: _damage_card | Card is null, returning")
 		return
@@ -466,39 +473,42 @@ func _damage_card(slot: int, damage: int) -> void:
 	card.current_line = new_line
 	print("DEBUG: _damage_card | New Line:", new_line, " | Overkill:", overkill)
 	
-	# Emit damaged signal - UI will update display
-	print("DEBUG: Emitting card_damaged signal")
+	# Emit damaged signal
 	card_damaged.emit(slot, damage)
 	
+	# Death Check
 	if card.current_line <= 0:
 		print("DEBUG: Card died, calling _destroy_card")
 		_destroy_card(slot)
 		
 		# Overkill boat damage logic
-		if overkill > 0 and not _defeat_triggered and boat_hp > 0:
+		# Guard: Ensure we don't trigger if defeated or if recursive death is processing
+		if overkill > 0 and not _defeat_triggered and boat_hp > 0 and not _processing_death:
 			print("DEBUG: Applying Overkill to boat:", overkill)
 			var actual_overkill: int = mini(overkill, boat_hp)
 			_damage_boat(actual_overkill)
 
 func _destroy_card(slot: int) -> void:
 	print("DEBUG: _destroy_card called | Slot:", slot)
-	if not is_inside_tree() or _defeat_triggered: return
+	if not is_inside_tree(): return
+	
 	var card = player_cards[slot]
-	if card == null: return
+	if card == null: return # Already destroyed
 	
 	if card.data != null:
 		card.data.is_damaged = true
 	
-	# CRITICAL: Nullify slot BEFORE emitting signals
+	# CRITICAL: Nullify slot BEFORE emitting signals to prevent recursion
 	player_cards[slot] = null
-	print("DEBUG: _destroy_card | Slot nulled, emitting signals")
 	
+	print("DEBUG: _destroy_card | Slot nulled, emitting signals")
 	card_destroyed.emit(slot)
 	board_updated.emit()
 
 func _damage_boat(damage: int) -> void:
-	# GUARD: If already defeated or dead, stop immediately to prevent recursion
+	# GUARD: If already defeated or dead, stop immediately
 	if _defeat_triggered or boat_hp <= 0: return
+	if damage <= 0: return
 	
 	print("DEBUG: _damage_boat called | Damage:", damage)
 	if not is_inside_tree() or not battle_active: return
@@ -520,18 +530,19 @@ func _trigger_defeat() -> void:
 	_defeat_triggered = true
 	battle_active = false
 	boat_hp = 0
+	_processing_death = true
 	
-	# Stop any pending QTEs immediately
+	# Stop any pending QTEs immediately and emit resolution to break awaits
 	awaiting_qte = false
 	pending_qte_slot = -1
+	qte_resolved.emit()
 	
 	if has_node("/root/MusicController"):
 		var music_ctrl = get_node("/root/MusicController")
 		if music_ctrl.has_method("play_roguelike_music"):
 			music_ctrl.play_roguelike_music()
 	
-	# Use call_deferred to allow the current frame (and any loops) to finish cleanly
-	# This prevents crashes if the scene changes while a loop is running
+	# Use call_deferred to allow the current frame to finish
 	call_deferred("emit_signal", "battle_lost")
 
 func _damage_fish(slot: int, damage: int) -> void:
@@ -702,6 +713,7 @@ func try_hook_fish(slot: int) -> bool:
 func resolve_catch(success: bool, quality_stars: int = 1) -> void:
 	if pending_qte_slot < 0:
 		awaiting_qte = false
+		qte_resolved.emit() # Ensure we signal resolution even if slot is invalid
 		return
 	
 	var fish = fish_slots[pending_qte_slot]
@@ -722,6 +734,8 @@ func resolve_catch(success: bool, quality_stars: int = 1) -> void:
 	
 	awaiting_qte = false
 	pending_qte_slot = -1
+	qte_resolved.emit() # Signal that QTE is done
+	
 	board_updated.emit()
 	if _check_win():
 		battle_active = false
