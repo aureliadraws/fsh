@@ -22,16 +22,16 @@ var selected_hand_index: int = -1
 var hook_mode: bool = false
 
 # Incoming fish indicators
-var incoming_fish_indicators: Dictionary = {}  # slot -> indicator node
+var incoming_fish_indicators: Dictionary = {}
 var incoming_fish_font: Font
 
 const CARD_W := 254.0
 const CARD_H := 348.0
 const HAND_HOVER_LIFT := 50.0
-const HAND_BASE_Y := 80.0  # Higher up from bottom
-const CARD_SPACING_HAND := -120.0  # More overlap for realistic hand (increased from -100)
+const HAND_BASE_Y := 80.0
+const CARD_SPACING_HAND := -120.0
 const CARD_SPACING_BOARD := 20.0
-const HAND_MAX_ROTATION := 12.0  # Max rotation in degrees for outer cards
+const HAND_MAX_ROTATION := 12.0
 
 var combat_log_container: VBoxContainer
 var turn_label: Label
@@ -47,6 +47,9 @@ var _hovered_hand_index: int = -1
 var _placement_preview_slot: int = -1
 var _placement_ghost: Node = null
 
+# Process for reliable hand card hover detection
+var _last_mouse_pos: Vector2 = Vector2.ZERO
+
 func _ready() -> void:
 	for path in ["res://scenes/roguelike/card layout.tscn", "res://scenes/menus/card layout.tscn"]:
 		if ResourceLoader.exists(path):
@@ -55,7 +58,6 @@ func _ready() -> void:
 	if not CARD_SCENE:
 		push_error("BattleBoardUI: Could not find card layout scene!")
 	
-	# Load font for incoming fish indicators
 	if ResourceLoader.exists("res://menu/font/BoldPixels.otf"):
 		incoming_fish_font = load("res://menu/font/BoldPixels.otf")
 	
@@ -65,16 +67,20 @@ func _ready() -> void:
 		for child in home_cards_hbox.get_children(): child.queue_free()
 	if hand_hbox:
 		for child in hand_hbox.get_children(): child.queue_free()
+		
 	if opponents_hbox: opponents_hbox.add_theme_constant_override("separation", 20)
 	if home_cards_hbox: home_cards_hbox.add_theme_constant_override("separation", 20)
 	if hand_hbox: hand_hbox.add_theme_constant_override("separation", 15)
+	
 	_setup_deck_click(salvage_node, true)
 	_setup_deck_click(chum_node, false)
+	
 	if home_cards_hbox:
 		home_cards_hbox.mouse_filter = Control.MOUSE_FILTER_STOP
-		home_cards_hbox.gui_input.connect(_on_home_area_click)
+	
 	if hook_button: hook_button.pressed.connect(_on_hook_pressed)
 	if end_turn_button: end_turn_button.pressed.connect(_on_end_turn_pressed)
+	
 	_setup_combat_text_layer()
 	_setup_hud()
 	_setup_minigame_layering()
@@ -82,31 +88,18 @@ func _ready() -> void:
 	set_process(true)
 	set_process_input(true)
 
-# Process for reliable hand card hover detection
-var _last_mouse_pos: Vector2 = Vector2.ZERO
-
 func _process(_delta: float) -> void:
-	# Safety check - don't process if we're being freed
-	if not is_inside_tree():
-		return
-	
-	# Only update hover when mouse has moved to avoid unnecessary computation
+	if not is_inside_tree(): return
 	var current_mouse_pos := get_global_mouse_position()
-	if current_mouse_pos.distance_squared_to(_last_mouse_pos) > 1.0:  # More than 1 pixel moved
+	if current_mouse_pos.distance_squared_to(_last_mouse_pos) > 1.0:
 		_last_mouse_pos = current_mouse_pos
 		_update_hand_hover()
 		_update_placement_preview(current_mouse_pos)
 
-# Input for reliable hand card click detection
 func _input(event: InputEvent) -> void:
-	# Safety check
-	if not is_inside_tree():
-		return
+	if not is_inside_tree(): return
 	if event is InputEventMouseButton and event.pressed:
-		# First try hand card clicks
-		if _handle_hand_click(event):
-			return
-		# Then try board slot clicks (when a hand card is selected)
+		if _handle_hand_click(event): return
 		if selected_hand_index >= 0 and event.button_index == MOUSE_BUTTON_LEFT:
 			_handle_board_slot_click(event)
 
@@ -127,28 +120,30 @@ func _setup_hud() -> void:
 	hud_panel.offset_top = 20
 	hud_panel.offset_bottom = 140
 	add_child(hud_panel)
+	
 	var vbox := VBoxContainer.new()
 	hud_panel.add_child(vbox)
+	
 	turn_label = Label.new()
 	turn_label.text = "Turn: 1"
-	if incoming_fish_font:
-		turn_label.add_theme_font_override("font", incoming_fish_font)
+	if incoming_fish_font: turn_label.add_theme_font_override("font", incoming_fish_font)
 	turn_label.add_theme_font_size_override("font_size", 16)
 	vbox.add_child(turn_label)
+	
 	bait_label = Label.new()
 	bait_label.text = "Bait: 0"
-	if incoming_fish_font:
-		bait_label.add_theme_font_override("font", incoming_fish_font)
+	if incoming_fish_font: bait_label.add_theme_font_override("font", incoming_fish_font)
 	bait_label.add_theme_font_size_override("font_size", 16)
 	bait_label.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
 	vbox.add_child(bait_label)
+	
 	boat_hp_label = Label.new()
 	boat_hp_label.text = "Boat: 3/3"
-	if incoming_fish_font:
-		boat_hp_label.add_theme_font_override("font", incoming_fish_font)
+	if incoming_fish_font: boat_hp_label.add_theme_font_override("font", incoming_fish_font)
 	boat_hp_label.add_theme_font_size_override("font_size", 16)
 	boat_hp_label.add_theme_color_override("font_color", Color(0.4, 0.8, 1))
 	vbox.add_child(boat_hp_label)
+	
 	combat_log_container = VBoxContainer.new()
 	combat_log_container.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	combat_log_container.offset_left = 20
@@ -562,7 +557,6 @@ func _connect_signals() -> void:
 	_safe_connect(battle_manager, "fish_spawned", _on_fish_spawned)
 	if catch_minigame: _safe_connect(catch_minigame, "catch_completed", _on_catch_completed)
 	
-	# If battle already started before we connected signals, refresh now
 	if battle_manager.has_method("is_battle_active") and battle_manager.is_battle_active():
 		_on_battle_started()
 
@@ -571,8 +565,7 @@ func _safe_connect(obj: Object, signal_name: String, method: Callable) -> void:
 		obj.connect(signal_name, method)
 
 func _on_hook_cooldown_tick(_turns: int) -> void: _update_hook_button()
-func set_area_name(n: String) -> void:
-	if area_label: area_label.text = n
+func set_area_name(n: String) -> void: if area_label: area_label.text = n
 
 func _on_battle_started() -> void:
 	selected_hand_index = -1
@@ -582,23 +575,14 @@ func _on_battle_started() -> void:
 	_update_hook_button()
 	_update_hud()
 	_add_combat_log("Battle Started!")
-	
-	# Clear all existing cards from previous battle
 	_clear_all_cards()
-	
-	# Clear incoming fish indicators
 	_clear_incoming_fish_indicators()
-	
-	# Check for any initial pending fish and show indicators
 	_refresh_incoming_fish_indicators()
-	
-	# Refresh all card displays
 	_refresh_fish()
 	_refresh_board()
 	_refresh_hand_full()
 
 func _clear_all_cards() -> void:
-	# Clear fish cards
 	for card in fish_cards:
 		if is_instance_valid(card):
 			_stop_idle_animation(card)
@@ -606,7 +590,6 @@ func _clear_all_cards() -> void:
 	fish_cards.clear()
 	fish_slot_map.clear()
 	
-	# Clear board cards
 	for card in board_cards:
 		if is_instance_valid(card):
 			_stop_idle_animation(card)
@@ -614,7 +597,6 @@ func _clear_all_cards() -> void:
 	board_cards.clear()
 	board_slot_map.clear()
 	
-	# Clear hand cards
 	for card in hand_cards:
 		if is_instance_valid(card):
 			_stop_idle_animation(card)
@@ -1191,9 +1173,10 @@ func _setup_as_fish_preview(card: Node, fish_data: FishData) -> void:
 func _on_boat_damaged(new_hp: int) -> void:
 	if boat_hp_label and battle_manager:
 		boat_hp_label.text = "Boat: %d/%d" % [new_hp, battle_manager.max_boat_hp]
-		AnimHelper.shake(boat_hp_label, 5, 0.3)
-		AnimHelper.damage_flash(boat_hp_label, 0.3)
-	_add_combat_log("Boat took damage! HP: %d" % new_hp)
+		if ClassDB.class_exists("AnimHelper") or ResourceLoader.exists("res://scripts/utils/anim_helper.gd"):
+			AnimHelper.shake(boat_hp_label, 5, 0.3)
+			AnimHelper.damage_flash(boat_hp_label, 0.3)
+	_add_combat_log("Boat took damage!\nHP: %d" % new_hp)
 
 func _update_hook_button() -> void:
 	if not hook_button or not battle_manager: return
@@ -1293,15 +1276,28 @@ func _spawn_floating_text_at_node(node: Node, text: String, color: Color) -> voi
 # Called when a player card starts attacking
 func _on_player_attack_started(slot: int, has_target: bool) -> void:
 	var attacker: Node = board_slot_map.get(slot)
-	var target: Node = fish_slot_map.get(slot)
-	if not attacker or not is_instance_valid(attacker):
-		return
+	if not attacker or not is_instance_valid(attacker): return
 	
-	if has_target and target and is_instance_valid(target):
-		# Animate attack towards the fish (upward)
+	# VISUAL FIX: Find the correct target, matching BattleManager logic
+	var target: Node = null
+	if has_target:
+		# 1. Check direct opposite
+		target = fish_slot_map.get(slot)
+		
+		# 2. If no direct target, find nearest
+		if not target or not is_instance_valid(target):
+			var best_dist = 999
+			for f_slot in fish_slot_map.keys():
+				var fish = fish_slot_map[f_slot]
+				if is_instance_valid(fish):
+					var dist = abs(f_slot - slot)
+					if dist < best_dist:
+						best_dist = dist
+						target = fish
+
+	if target and is_instance_valid(target):
 		_animate_attack_to_target_node(attacker, target)
 	else:
-		# No target - just do a small lunge
 		_animate_attack_lunge(attacker, Vector2.UP, 30.0)
 
 
@@ -1418,8 +1414,7 @@ func _animate_attack_to_target_node(attacker: Node, target: Node) -> void:
 
 
 func _animate_attack_to_boat(attacker: Node) -> void:
-	if not is_instance_valid(attacker):
-		return
+	if not is_instance_valid(attacker): return
 	
 	_stop_idle_animation(attacker)
 	var original_pos: Vector2 = attacker.position
@@ -1437,8 +1432,11 @@ func _animate_attack_to_boat(attacker: Node) -> void:
 	# Lunge down towards boat
 	tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_EXPO)
 	tween.tween_property(attacker, "position", attack_pos, 0.15)
+	
+	# FIX: Allow both Node2D and Control
 	tween.parallel().tween_property(attacker, "scale", Vector2(1.25, 1.25), 0.1)
 	tween.parallel().tween_property(attacker, "rotation_degrees", 10.0, 0.15)
+		
 	# Play impact sound when hitting boat
 	tween.tween_callback(func(): AudioManager.play_card_impact())
 	# Hold at attack position
@@ -2025,22 +2023,31 @@ func _animate_card_selected(card: Node, selected: bool) -> void:
 func _start_idle_animation(card: Node) -> void:
 	if not is_instance_valid(card): return
 	_stop_idle_animation(card)
+	
+	# CRITICAL FIX: The previous code only added steps for Node2D,
+	# causing an infinite 0-duration loop for Control nodes (UI cards).
+	# We now handle both types, or abort if neither.
+	if not (card is Node2D or card is Control):
+		return
+		
 	var tween := create_tween()
-	tween.set_loops()
+	tween.set_loops() # Infinite loop
+	
 	var float_amount := randf_range(3.0, 6.0)
 	var float_duration := randf_range(2.0, 3.0)
-	if card is Node2D:
-		var base_y: float = card.position.y
-		tween.tween_property(card, "position:y", base_y - float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.tween_property(card, "position:y", base_y + float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var base_y: float = card.position.y
+	
+	# This adds actual duration to the tween, preventing the freeze
+	# "position:y" property works for both Node2D and Control in Godot 4
+	tween.tween_property(card, "position:y", base_y - float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(card, "position:y", base_y + float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
 	idle_tween_map[card] = tween
 
 func _start_idle_animation_delayed(card: Node, delay: float) -> void:
-	if not is_inside_tree():
-		return
+	if not is_inside_tree(): return
 	var tree = get_tree()
-	if tree == null:
-		return
+	if tree == null: return
 	await tree.create_timer(delay).timeout
 	if is_instance_valid(card) and is_inside_tree(): 
 		_start_idle_animation(card)

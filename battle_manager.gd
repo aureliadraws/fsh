@@ -339,6 +339,8 @@ func _fish_attack_animated(slot: int) -> void:
 		
 		if attacks_boat:
 			_damage_boat(damage)
+			# NOTE: _defeat_triggered might be true here if boat died.
+			# We return immediately to avoid accessing invalid memory if the scene changes.
 			if _defeat_triggered: return
 			fish_attack_finished.emit(slot)
 		elif target_slot >= 0:
@@ -434,6 +436,7 @@ func _process_player_attacks_animated() -> void:
 
 # ============ SAFE DAMAGE FUNCTIONS ============
 func _damage_card(slot: int, damage: int) -> void:
+	# GUARD: Ensure node is valid
 	if not is_inside_tree() or _defeat_triggered: return
 	if slot < 0 or slot >= NUM_SLOTS: return
 	var card = player_cards[slot]
@@ -456,6 +459,7 @@ func _damage_card(slot: int, damage: int) -> void:
 	
 	if card.current_line <= 0:
 		_destroy_card(slot)
+		# Overkill boat damage logic
 		if overkill > 0 and not _defeat_triggered and boat_hp > 0:
 			var actual_overkill: int = mini(overkill, boat_hp)
 			_damage_boat(actual_overkill)
@@ -473,6 +477,7 @@ func _destroy_card(slot: int) -> void:
 	board_updated.emit()
 
 func _damage_boat(damage: int) -> void:
+	# CRITICAL FIX: Check flags before acting
 	if not is_inside_tree() or _defeat_triggered or not battle_active: return
 	if boat_hp <= 0: return
 	
@@ -481,6 +486,7 @@ func _damage_boat(damage: int) -> void:
 	
 	boat_damaged.emit(boat_hp)
 	
+	# If this kills the boat, trigger defeat safely
 	if boat_hp <= 0 and not _defeat_triggered:
 		_trigger_defeat()
 
@@ -489,7 +495,15 @@ func _trigger_defeat() -> void:
 	_defeat_triggered = true
 	battle_active = false
 	boat_hp = 0
-	battle_lost.emit()
+	
+	# Stop music if present
+	if has_node("/root/MusicController"):
+		var music_ctrl = get_node("/root/MusicController")
+		if music_ctrl.has_method("play_roguelike_music"):
+			music_ctrl.play_roguelike_music()
+	
+	# DEFER SIGNAL to prevent crash if scene changes immediately
+	call_deferred("emit_signal", "battle_lost")
 
 func _damage_fish(slot: int, damage: int) -> void:
 	if not is_inside_tree(): return
@@ -682,7 +696,7 @@ func resolve_catch(success: bool, quality_stars: int = 1) -> void:
 	board_updated.emit()
 	if _check_win():
 		battle_active = false
-		battle_won.emit(catch_hold)
+		call_deferred("emit_signal", "battle_won", catch_hold)
 
 func _trigger_catch_qte(slot: int) -> void:
 	var fish = fish_slots[slot]
