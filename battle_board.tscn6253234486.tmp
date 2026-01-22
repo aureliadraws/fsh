@@ -1,0 +1,120 @@
+[gd_scene load_steps=7 format=3 uid="uid://dyo7q5s6tbkhk"]
+
+[ext_resource type="Script" uid="uid://djw5xh4eyvdix" path="res://scenes/roguelike/battle_board_ui.gd" id="1_utegp"]
+[ext_resource type="Script" uid="uid://djnl7q64wxmee" path="res://scenes/roguelike/battle_manager.gd" id="2_utegp"]
+[ext_resource type="PackedScene" path="res://scenes/roguelike/catch_minigame.tscn" id="3_minigame"]
+[ext_resource type="PackedScene" uid="uid://beot6bkcxo4bg" path="res://scenes/roguelike/card layout.tscn" id="4_utegp"]
+[ext_resource type="FontFile" uid="uid://b2h1oiuwns7jp" path="res://menu/font/BoldPixels.otf" id="5_a0m4q"]
+[ext_resource type="Texture2D" uid="uid://c6l74gn1wtkbc" path="res://assets/background/card reference.png" id="5_b4ji2"]
+
+[node name="BattleBoard" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_utegp")
+
+[node name="BattleManager" type="Node" parent="."]
+script = ExtResource("2_utegp")
+
+[node name="CatchMinigame" parent="." instance=ExtResource("3_minigame")]
+visible = false
+z_index = 100
+layout_mode = 1
+
+[node name="CardsInPlay" type="Container" parent="."]
+layout_mode = 0
+offset_left = 740.0
+offset_top = 71.0
+offset_right = 1839.0
+offset_bottom = 847.0
+
+[node name="CardsVBoxContainer" type="VBoxContainer" parent="CardsInPlay"]
+custom_minimum_size = Vector2(1100, 375)
+layout_mode = 2
+alignment = 1
+
+[node name="Opponents" type="HBoxContainer" parent="CardsInPlay/CardsVBoxContainer"]
+custom_minimum_size = Vector2(0, 375)
+layout_mode = 2
+alignment = 1
+
+[node name="CardDisplay" parent="CardsInPlay/CardsVBoxContainer/Opponents" instance=ExtResource("4_utegp")]
+visible = false
+
+[node name="HomeCards" type="HBoxContainer" parent="CardsInPlay/CardsVBoxContainer"]
+custom_minimum_size = Vector2(0, 375)
+layout_mode = 2
+alignment = 1
+
+[node name="CardDisplay" parent="CardsInPlay/CardsVBoxContainer/HomeCards" instance=ExtResource("4_utegp")]
+visible = false
+
+[node name="CardHandContainer" type="Container" parent="."]
+layout_mode = 0
+offset_left = 693.0
+offset_top = 889.0
+offset_right = 1907.0
+offset_bottom = 1665.0
+
+[node name="Card Hand" type="HBoxContainer" parent="CardHandContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="CardDisplay" parent="CardHandContainer/Card Hand" instance=ExtResource("4_utegp")]
+visible = false
+
+[node name="Options" type="Container" parent="."]
+layout_mode = 0
+offset_left = 68.0
+offset_top = 524.0
+offset_right = 616.0
+offset_bottom = 1036.0
+
+[node name="OptionsVBoxContainer" type="VBoxContainer" parent="Options"]
+custom_minimum_size = Vector2(550, 510)
+layout_mode = 2
+
+[node name="Hook" type="Button" parent="Options/OptionsVBoxContainer"]
+texture_filter = 3
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_a0m4q")
+theme_override_font_sizes/font_size = 60
+text = "HOOK"
+
+[node name="EndTurn" type="Button" parent="Options/OptionsVBoxContainer"]
+texture_filter = 3
+layout_mode = 2
+theme_override_fonts/font = ExtResource("5_a0m4q")
+theme_override_font_sizes/font_size = 60
+text = "END TURN"
+
+[node name="Decks" type="HBoxContainer" parent="Options/OptionsVBoxContainer"]
+custom_minimum_size = Vector2(0, 400)
+layout_mode = 2
+theme_override_constants/separation = 30
+
+[node name="Salvage" parent="Options/OptionsVBoxContainer/Decks" instance=ExtResource("4_utegp")]
+
+[node name="Chum" parent="Options/OptionsVBoxContainer/Decks" instance=ExtResource("4_utegp")]
+
+[node name="TextureRect" type="TextureRect" parent="."]
+visible = false
+layout_mode = 0
+offset_top = -18.0
+offset_right = 1931.448
+offset_bottom = 1097.0
+texture = ExtResource("5_b4ji2")
+
+[node name="Label" type="Label" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 60.0
+offset_top = 42.0
+offset_right = 479.0
+offset_bottom = 138.0
+theme_override_fonts/font = ExtResource("5_a0m4q")
+theme_override_font_sizes/font_size = 82
+text = "AREA NAME"
