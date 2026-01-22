@@ -64,7 +64,7 @@ var max_boat_hp: int = 3
 # Hook
 var hook_cooldown: int = 0
 var hook_cooldown_max: int = 3 
-var rod_strength: int = 2       
+var rod_strength: int = 2        
 
 # Decks
 var salvage_deck: Array = []
@@ -88,6 +88,7 @@ var _defeat_triggered: bool = false
 # INITIALIZATION
 # ==========================================
 func _ready() -> void:
+	print("DEBUG: BattleManager Ready")
 	# Setup chum card template
 	chum_card_template = CardData.new()
 	chum_card_template.card_name = "Chum"
@@ -98,6 +99,7 @@ func _ready() -> void:
 	chum_card_template.card_type = "Chum"
 
 func start_battle(deck: Array, enemies: Array, boat_health: int = 3, p_rod_strength: int = 2, p_hook_cooldown_max: int = 3) -> void:
+	print("DEBUG: Starting Battle")
 	_defeat_triggered = false
 	battle_active = true
 	
@@ -182,6 +184,7 @@ func _start_turn() -> void:
 	if not battle_active or _defeat_triggered: return
 	
 	turn_number += 1
+	print("DEBUG: Start Turn ", turn_number)
 	has_drawn_this_turn = false
 	
 	_process_pending_fish()
@@ -209,8 +212,6 @@ func _start_turn() -> void:
 	hand_updated.emit()
 
 func _process_pending_fish() -> void:
-	# INFINITE LOOP FIX: Instead of removing items from the list we are looping through,
-	# we rebuild the list. This is 100% crash proof.
 	var next_pending_list: Array = []
 	var fish_to_spawn: Array = []
 	
@@ -221,7 +222,6 @@ func _process_pending_fish() -> void:
 		else:
 			next_pending_list.append(pending)
 	
-	# Swap the lists safely
 	pending_fish = next_pending_list
 	
 	var any_spawned := false
@@ -229,24 +229,23 @@ func _process_pending_fish() -> void:
 		var slot: int = item.slot
 		var fish: FishData = item.fish
 		
-		# If slot occupied, find new one
 		if fish_slots[slot] != null:
 			slot = _find_empty_fish_slot()
 		
 		if slot >= 0 and slot < NUM_SLOTS:
 			fish_slots[slot] = fish.create_instance()
 			any_spawned = true
-			fish_incoming.emit(item.slot, null) # Clear indicator
+			fish_incoming.emit(item.slot, null)
 			fish_spawned.emit(slot)
 	
 	if any_spawned: board_updated.emit()
 
-# MISSING FUNCTION RESTORED
 func get_pending_fish() -> Array:
 	return pending_fish
 
 func end_turn() -> void:
 	if not battle_active or awaiting_qte or _defeat_triggered: return
+	print("DEBUG: End Turn Requested")
 	
 	turn_ended.emit()
 	
@@ -297,6 +296,8 @@ func _fish_attack_animated(slot: int) -> void:
 	var fish_data: FishData = fish.data
 	if fish_data == null: return
 	
+	print("DEBUG: Fish Attack Animated | Slot:", slot, " | Name:", fish_data.fish_name)
+	
 	fish.has_attacked = true
 	fish.turns_alive += 1
 	
@@ -338,12 +339,12 @@ func _fish_attack_animated(slot: int) -> void:
 		if _defeat_triggered or not battle_active: return
 		
 		if attacks_boat:
+			print("DEBUG: Fish attacking boat")
 			_damage_boat(damage)
-			# NOTE: _defeat_triggered might be true here if boat died.
-			# We return immediately to avoid accessing invalid memory if the scene changes.
 			if _defeat_triggered: return
 			fish_attack_finished.emit(slot)
 		elif target_slot >= 0:
+			print("DEBUG: Fish attacking card | Target Slot:", target_slot)
 			if fish_data.sinker == "Consume":
 				var target_card = player_cards[target_slot]
 				if target_card != null and target_card.current_line <= fish_data.hook:
@@ -414,13 +415,12 @@ func _process_player_attacks_animated() -> void:
 		
 		player_attack_finished.emit(card_slot)
 		
-		# QTE Wait Loop with Timeout Safeguard (Prevents freeze if UI fails)
 		var safety_timer = 0
 		while awaiting_qte:
 			await get_tree().create_timer(0.1).timeout
 			safety_timer += 1
 			if _defeat_triggered: return
-			if safety_timer > 100: # Force break after 10 seconds of hanging
+			if safety_timer > 100:
 				awaiting_qte = false
 				print("ERROR: QTE timed out, forcing progress.")
 				break
@@ -436,11 +436,13 @@ func _process_player_attacks_animated() -> void:
 
 # ============ SAFE DAMAGE FUNCTIONS ============
 func _damage_card(slot: int, damage: int) -> void:
-	# GUARD: Ensure node is valid
+	print("DEBUG: _damage_card called | Slot:", slot, " | Damage:", damage)
 	if not is_inside_tree() or _defeat_triggered: return
 	if slot < 0 or slot >= NUM_SLOTS: return
 	var card = player_cards[slot]
-	if card == null: return
+	if card == null:
+		print("DEBUG: _damage_card | Card is null, returning")
+		return
 	
 	var console = get_node_or_null("/root/DebugConsole")
 	if console and console.has_method("is_invincible") and console.is_invincible():
@@ -455,16 +457,24 @@ func _damage_card(slot: int, damage: int) -> void:
 		overkill = abs(new_line)
 	
 	card.current_line = new_line
+	print("DEBUG: _damage_card | New Line:", new_line, " | Overkill:", overkill)
+	
+	# Emit damaged signal - UI will update display
+	print("DEBUG: Emitting card_damaged signal")
 	card_damaged.emit(slot, damage)
 	
 	if card.current_line <= 0:
+		print("DEBUG: Card died, calling _destroy_card")
 		_destroy_card(slot)
+		
 		# Overkill boat damage logic
 		if overkill > 0 and not _defeat_triggered and boat_hp > 0:
+			print("DEBUG: Applying Overkill to boat:", overkill)
 			var actual_overkill: int = mini(overkill, boat_hp)
 			_damage_boat(actual_overkill)
 
 func _destroy_card(slot: int) -> void:
+	print("DEBUG: _destroy_card called | Slot:", slot)
 	if not is_inside_tree() or _defeat_triggered: return
 	var card = player_cards[slot]
 	if card == null: return
@@ -472,37 +482,49 @@ func _destroy_card(slot: int) -> void:
 	if card.data != null:
 		card.data.is_damaged = true
 	
+	# CRITICAL: Nullify slot BEFORE emitting signals
 	player_cards[slot] = null
+	print("DEBUG: _destroy_card | Slot nulled, emitting signals")
+	
 	card_destroyed.emit(slot)
 	board_updated.emit()
 
 func _damage_boat(damage: int) -> void:
-	# CRITICAL FIX: Check flags before acting
-	if not is_inside_tree() or _defeat_triggered or not battle_active: return
-	if boat_hp <= 0: return
+	# GUARD: If already defeated or dead, stop immediately to prevent recursion
+	if _defeat_triggered or boat_hp <= 0: return
+	
+	print("DEBUG: _damage_boat called | Damage:", damage)
+	if not is_inside_tree() or not battle_active: return
 	
 	var actual_damage: int = mini(damage, boat_hp)
 	boat_hp = max(0, boat_hp - actual_damage)
 	
+	print("DEBUG: _damage_boat | New HP:", boat_hp)
 	boat_damaged.emit(boat_hp)
 	
-	# If this kills the boat, trigger defeat safely
+	# Trigger defeat if HP hits 0
 	if boat_hp <= 0 and not _defeat_triggered:
+		print("DEBUG: Boat died, triggering defeat sequence")
 		_trigger_defeat()
 
 func _trigger_defeat() -> void:
 	if _defeat_triggered: return
+	print("DEBUG: Triggering Defeat")
 	_defeat_triggered = true
 	battle_active = false
 	boat_hp = 0
 	
-	# Stop music if present
+	# Stop any pending QTEs immediately
+	awaiting_qte = false
+	pending_qte_slot = -1
+	
 	if has_node("/root/MusicController"):
 		var music_ctrl = get_node("/root/MusicController")
 		if music_ctrl.has_method("play_roguelike_music"):
 			music_ctrl.play_roguelike_music()
 	
-	# DEFER SIGNAL to prevent crash if scene changes immediately
+	# Use call_deferred to allow the current frame (and any loops) to finish cleanly
+	# This prevents crashes if the scene changes while a loop is running
 	call_deferred("emit_signal", "battle_lost")
 
 func _damage_fish(slot: int, damage: int) -> void:
@@ -841,6 +863,4 @@ func get_rod_strength() -> int: return rod_strength
 func get_catch_hold() -> Array: return catch_hold
 func can_draw() -> bool: return not has_drawn_this_turn and battle_active and not awaiting_qte
 func is_battle_active() -> bool: return battle_active
-
-func _get_debug_console() -> Node:
-	return get_node_or_null("/root/DebugConsole")
+func _get_debug_console() -> Node: return get_node_or_null("/root/DebugConsole")

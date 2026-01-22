@@ -20,8 +20,6 @@ var fish_slot_map: Dictionary = {}
 var board_slot_map: Dictionary = {}
 var selected_hand_index: int = -1
 var hook_mode: bool = false
-
-# Incoming fish indicators
 var incoming_fish_indicators: Dictionary = {}
 var incoming_fish_font: Font
 
@@ -42,41 +40,22 @@ var idle_tween_map: Dictionary = {}
 var hover_tween_map: Dictionary = {}
 var _previous_hand_size: int = 0
 var _hovered_hand_index: int = -1
-
-# Card placement preview
 var _placement_preview_slot: int = -1
 var _placement_ghost: Node = null
-
-# Process for reliable hand card hover detection
 var _last_mouse_pos: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
+	print("DEBUG: UI Ready")
 	for path in ["res://scenes/roguelike/card layout.tscn", "res://scenes/menus/card layout.tscn"]:
 		if ResourceLoader.exists(path):
 			CARD_SCENE = load(path)
 			break
-	if not CARD_SCENE:
-		push_error("BattleBoardUI: Could not find card layout scene!")
 	
 	if ResourceLoader.exists("res://menu/font/BoldPixels.otf"):
 		incoming_fish_font = load("res://menu/font/BoldPixels.otf")
 	
-	if opponents_hbox:
-		for child in opponents_hbox.get_children(): child.queue_free()
-	if home_cards_hbox:
-		for child in home_cards_hbox.get_children(): child.queue_free()
-	if hand_hbox:
-		for child in hand_hbox.get_children(): child.queue_free()
-		
-	if opponents_hbox: opponents_hbox.add_theme_constant_override("separation", 20)
-	if home_cards_hbox: home_cards_hbox.add_theme_constant_override("separation", 20)
-	if hand_hbox: hand_hbox.add_theme_constant_override("separation", 15)
-	
 	_setup_deck_click(salvage_node, true)
 	_setup_deck_click(chum_node, false)
-	
-	if home_cards_hbox:
-		home_cards_hbox.mouse_filter = Control.MOUSE_FILTER_STOP
 	
 	if hook_button: hook_button.pressed.connect(_on_hook_pressed)
 	if end_turn_button: end_turn_button.pressed.connect(_on_end_turn_pressed)
@@ -120,30 +99,14 @@ func _setup_hud() -> void:
 	hud_panel.offset_top = 20
 	hud_panel.offset_bottom = 140
 	add_child(hud_panel)
-	
 	var vbox := VBoxContainer.new()
 	hud_panel.add_child(vbox)
-	
 	turn_label = Label.new()
-	turn_label.text = "Turn: 1"
-	if incoming_fish_font: turn_label.add_theme_font_override("font", incoming_fish_font)
-	turn_label.add_theme_font_size_override("font_size", 16)
 	vbox.add_child(turn_label)
-	
 	bait_label = Label.new()
-	bait_label.text = "Bait: 0"
-	if incoming_fish_font: bait_label.add_theme_font_override("font", incoming_fish_font)
-	bait_label.add_theme_font_size_override("font_size", 16)
-	bait_label.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
 	vbox.add_child(bait_label)
-	
 	boat_hp_label = Label.new()
-	boat_hp_label.text = "Boat: 3/3"
-	if incoming_fish_font: boat_hp_label.add_theme_font_override("font", incoming_fish_font)
-	boat_hp_label.add_theme_font_size_override("font_size", 16)
-	boat_hp_label.add_theme_color_override("font_color", Color(0.4, 0.8, 1))
 	vbox.add_child(boat_hp_label)
-	
 	combat_log_container = VBoxContainer.new()
 	combat_log_container.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
 	combat_log_container.offset_left = 20
@@ -528,9 +491,7 @@ func _update_deck_visuals(can_draw: bool) -> void:
 				chum_back.modulate = Color(0.5, 0.5, 0.5)
 
 func _connect_signals() -> void:
-	if not battle_manager: 
-		push_error("BattleBoardUI: No battle_manager found!")
-		return
+	if not battle_manager: return
 	_safe_connect(battle_manager, "battle_started", _on_battle_started)
 	_safe_connect(battle_manager, "turn_started", _on_turn_started)
 	_safe_connect(battle_manager, "turn_ended", _on_turn_ended)
@@ -556,9 +517,7 @@ func _connect_signals() -> void:
 	_safe_connect(battle_manager, "fish_incoming", _on_fish_incoming)
 	_safe_connect(battle_manager, "fish_spawned", _on_fish_spawned)
 	if catch_minigame: _safe_connect(catch_minigame, "catch_completed", _on_catch_completed)
-	
-	if battle_manager.has_method("is_battle_active") and battle_manager.is_battle_active():
-		_on_battle_started()
+	if battle_manager.is_battle_active(): _on_battle_started()
 
 func _safe_connect(obj: Object, signal_name: String, method: Callable) -> void:
 	if obj.has_signal(signal_name) and not obj.is_connected(signal_name, method):
@@ -568,50 +527,27 @@ func _on_hook_cooldown_tick(_turns: int) -> void: _update_hook_button()
 func set_area_name(n: String) -> void: if area_label: area_label.text = n
 
 func _on_battle_started() -> void:
-	selected_hand_index = -1
-	hook_mode = false
-	_hovered_hand_index = -1
-	_previous_hand_size = 0
-	_update_hook_button()
-	_update_hud()
-	_add_combat_log("Battle Started!")
 	_clear_all_cards()
-	_clear_incoming_fish_indicators()
-	_refresh_incoming_fish_indicators()
-	_refresh_fish()
-	_refresh_board()
-	_refresh_hand_full()
+	_update_hud()
 
 func _clear_all_cards() -> void:
-	for card in fish_cards:
-		if is_instance_valid(card):
-			_stop_idle_animation(card)
-			card.queue_free()
+	for c in fish_cards: if is_instance_valid(c): c.queue_free()
 	fish_cards.clear()
 	fish_slot_map.clear()
-	
-	for card in board_cards:
-		if is_instance_valid(card):
-			_stop_idle_animation(card)
-			card.queue_free()
+	for c in board_cards: if is_instance_valid(c): c.queue_free()
 	board_cards.clear()
 	board_slot_map.clear()
-	
-	for card in hand_cards:
-		if is_instance_valid(card):
-			_stop_idle_animation(card)
-			_stop_hover_animation(card)
-			card.queue_free()
+	for c in hand_cards: if is_instance_valid(c): c.queue_free()
 	hand_cards.clear()
 
 func _on_turn_started(t: int) -> void:
-	_update_hook_button()
 	_update_hud()
 	_show_turn_banner(t)
 	_reenable_end_turn_button()
 
 func _on_turn_ended() -> void: _add_combat_log("End of Turn")
 func _on_board_updated() -> void:
+	print("DEBUG: _on_board_updated called")
 	_refresh_fish()
 	_refresh_board()
 func _on_hand_updated() -> void: _smart_refresh_hand()
@@ -685,70 +621,59 @@ func _on_battle_lost() -> void:
 	_spawn_floating_text(get_viewport_rect().size / 2, "DEFEAT!", Color.RED, 64)
 
 func _on_card_damaged(slot: int, damage: int) -> void:
+	print("DEBUG: UI _on_card_damaged | Slot:", slot)
 	var card = board_slot_map.get(slot)
 	if card and is_instance_valid(card):
 		_stop_idle_animation(card)
-		AnimHelper.take_damage(card)
+		_safe_shake(card, 5, 0.3)
 		_spawn_floating_text_at_node(card, "-%d" % damage, Color.RED)
-		_add_combat_log("Card took %d damage" % damage)
-		
-		# Update the card's Line label to show new health
 		_update_card_health_display(slot)
-		
-		# Restart idle after damage animation
 		_start_idle_animation_delayed(card, 0.4)
 
 func _update_card_health_display(slot: int) -> void:
 	var card = board_slot_map.get(slot)
-	if not card or not is_instance_valid(card):
-		return
-	
-	# Get the card instance from battle_manager
-	if not battle_manager:
-		return
+	if not card or not is_instance_valid(card): return
 	var card_inst = battle_manager.player_cards[slot] if slot < battle_manager.NUM_SLOTS else null
-	if not card_inst:
+	# NOTE: card_inst might be null here if destroyed already, handled gracefully
+	if not card_inst: 
+		print("DEBUG: UI update health - card_inst is null (destroyed?)")
 		return
-	
-	# Update the Line label - use max(0, value) to avoid showing negative numbers
 	var line_label = card.get_node_or_null("Line")
 	if line_label:
-		var display_value: int = maxi(0, card_inst.current_line)
-		line_label.text = str(display_value)
-		
-		# Flash the label red briefly - but safely handle scene tree changes
-		var original_color = line_label.get_theme_color("font_color") if line_label.has_theme_color("font_color") else Color.WHITE
-		line_label.add_theme_color_override("font_color", Color.RED)
-		
-		# Safety: store reference and check tree before await
-		if not is_inside_tree():
-			return
-		var tree = get_tree()
-		if tree == null:
-			return
-		await tree.create_timer(0.3).timeout
-		
-		# Safety checks after await
-		if is_instance_valid(line_label) and is_inside_tree():
-			line_label.add_theme_color_override("font_color", original_color)
+		line_label.text = str(maxi(0, card_inst.current_line))
 
 func _on_card_destroyed(slot: int) -> void:
+	print("DEBUG: UI _on_card_destroyed | Slot:", slot)
+	
+	# 1. Get reference
 	var card = board_slot_map.get(slot)
+	
+	# 2. IMMEDIATE REMOVAL from tracking maps
+	# This ensures _refresh_board ignores this card while it animates dying
+	board_slot_map.erase(slot)
+	if card in board_cards:
+		board_cards.erase(card)
+	
+	# 3. Animate the orphaned node
 	if card and is_instance_valid(card):
 		_add_combat_log("Card destroyed!")
-		_stop_idle_animation(card)
-		# Remove from map immediately to prevent further access
-		board_slot_map.erase(slot)
-		if card in board_cards:
-			board_cards.erase(card)
-		# Use dissolve effect - pass callback to refresh board after
-		_animate_card_dissolve(card, func(): _refresh_board())
+		_stop_idle_animation(card) # Prevent loop warning
+		
+		# Pass a callback to ensure it frees even if animation fails
+		_animate_card_dissolve(card, func(): 
+			print("DEBUG: Card dissolve complete, freeing node")
+			if is_instance_valid(card): card.queue_free()
+		)
+	else:
+		print("DEBUG: UI _on_card_destroyed - card node already invalid")
 
 func _on_fish_damaged(slot: int, damage: int) -> void:
 	var card = fish_slot_map.get(slot)
 	if card and is_instance_valid(card):
 		_stop_idle_animation(card)
-		AnimHelper.take_damage(card)
+		# CRITICAL FIX: Use local safe animation
+		_safe_shake(card, 5, 0.3)
+		_safe_damage_flash(card, 0.3)
 		_spawn_floating_text_at_node(card, "-%d" % damage, Color.ORANGE)
 		_add_combat_log("Fish took %d damage" % damage)
 		
@@ -794,24 +719,40 @@ func _update_fish_health_display(slot: int) -> void:
 
 func _on_fish_destroyed(slot: int) -> void:
 	var card = fish_slot_map.get(slot)
+	
+	# CRITICAL: Remove from maps IMMEDIATELY
+	fish_slot_map.erase(slot)
+	if card in fish_cards:
+		fish_cards.erase(card)
+
 	if card and is_instance_valid(card):
 		_add_combat_log("Fish caught!")
 		_stop_idle_animation(card)
-		# Remove from map immediately to prevent further access
-		fish_slot_map.erase(slot)
-		if card in fish_cards:
-			fish_cards.erase(card)
-		var tween := AnimHelper.die(card)
-		if tween:
-			tween.finished.connect(func():
-				if is_instance_valid(card):
-					card.queue_free()
-			)
-		else:
-			card.queue_free()
+		
+		# Replace AnimHelper.die with local safe animation
+		_animate_fish_death(card)
 	else:
 		_add_combat_log("Fish caught!")
 
+func _animate_fish_death(card: Node) -> void:
+	if not is_instance_valid(card): return
+	
+	# Ensure it renders on top during death
+	if card is Node2D: card.z_index = 100
+	
+	var tween := create_tween()
+	tween.set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_BACK)
+	
+	# Scale down and rotate
+	tween.tween_property(card, "scale", Vector2(0.1, 0.1), 0.3)
+	tween.parallel().tween_property(card, "rotation_degrees", 180.0, 0.3)
+	tween.parallel().tween_property(card, "modulate:a", 0.0, 0.3)
+	
+	tween.finished.connect(func():
+		if is_instance_valid(card):
+			card.queue_free()
+	)
+	
 func _on_fish_fled(slot: int) -> void:
 	var card = fish_slot_map.get(slot)
 	if card and is_instance_valid(card):
@@ -1169,14 +1110,42 @@ func _setup_as_fish_preview(card: Node, fish_data: FishData) -> void:
 		if fish_image: fish_image.texture = fish_data.texture
 		if fish_shadow: fish_shadow.texture = fish_data.texture
 
+# Replaces AnimHelper.shake to prevent crashes
+func _safe_shake(node: Node, intensity: float = 5.0, duration: float = 0.3) -> void:
+	if not is_instance_valid(node) or not node is Control: return
+	
+	# CRITICAL FIX: Do not shake Position if node is inside a Container
+	# Tweening position inside a Container causes infinite layout loops and crashes
+	var parent = node.get_parent()
+	if parent is Container:
+		_safe_damage_flash(node, duration) # Just flash instead
+		return
+	
+	# Safe to shake position for non-container nodes (like Cards on board)
+	var original_pos: Vector2 = node.position
+	var tween := create_tween()
+	# Don't use set_loops() here to avoid any risk
+	var steps = int(duration * 20) # 20 steps per second
+	for i in steps:
+		var offset = Vector2(randf_range(-intensity, intensity), randf_range(-intensity, intensity))
+		tween.tween_property(node, "position", original_pos + offset, 0.05)
+	tween.tween_property(node, "position", original_pos, 0.05)
+
+# Replaces AnimHelper.damage_flash
+func _safe_damage_flash(node: Node, duration: float = 0.3) -> void:
+	if not is_instance_valid(node) or not node is CanvasItem: return
+	
+	var original_modulate = node.modulate
+	var tween := create_tween()
+	tween.tween_property(node, "modulate", Color(10, 10, 10, 1), 0.05) # Flash white
+	tween.tween_property(node, "modulate", original_modulate, duration - 0.05)
 
 func _on_boat_damaged(new_hp: int) -> void:
-	if boat_hp_label and battle_manager:
+	print("DEBUG: UI _on_boat_damaged | HP:", new_hp)
+	if boat_hp_label:
 		boat_hp_label.text = "Boat: %d/%d" % [new_hp, battle_manager.max_boat_hp]
-		if ClassDB.class_exists("AnimHelper") or ResourceLoader.exists("res://scripts/utils/anim_helper.gd"):
-			AnimHelper.shake(boat_hp_label, 5, 0.3)
-			AnimHelper.damage_flash(boat_hp_label, 0.3)
-	_add_combat_log("Boat took damage!\nHP: %d" % new_hp)
+		_safe_shake(boat_hp_label, 5, 0.3)
+	_add_combat_log("Boat took damage!")
 
 func _update_hook_button() -> void:
 	if not hook_button or not battle_manager: return
@@ -1299,7 +1268,6 @@ func _on_player_attack_started(slot: int, has_target: bool) -> void:
 		_animate_attack_to_target_node(attacker, target)
 	else:
 		_animate_attack_lunge(attacker, Vector2.UP, 30.0)
-
 
 # Called when a fish starts attacking
 func _on_fish_attack_started(slot: int, has_target: bool) -> void:
@@ -1864,118 +1832,81 @@ func _refresh_fish() -> void:
 
 func _refresh_board() -> void:
 	if not battle_manager or not home_cards_hbox: return
+	print("DEBUG: _refresh_board started")
 	
-	# Get current board state
+	# Get current board state from BattleManager
 	var active_cards: Array = []
-	var active_slots: Dictionary = {}  # Track which slots should exist
+	var active_slots: Dictionary = {}
 	for i in battle_manager.NUM_SLOTS:
 		var card_inst = battle_manager.player_cards[i]
 		if card_inst != null:
 			active_cards.append({"inst": card_inst, "slot": i})
 			active_slots[i] = true
 	
-	# Calculate new positions
+	# Clean up slots that shouldn't be there
+	var slots_to_remove: Array = []
+	for slot in board_slot_map.keys():
+		var card = board_slot_map[slot]
+		# Check if node is valid/alive
+		if not is_instance_valid(card) or card.is_queued_for_deletion():
+			slots_to_remove.append(slot)
+			continue
+		
+		if not active_slots.has(slot):
+			slots_to_remove.append(slot)
+	
+	for slot in slots_to_remove:
+		print("DEBUG: _refresh_board removing slot:", slot)
+		var card = board_slot_map.get(slot)
+		if is_instance_valid(card) and not card.is_queued_for_deletion():
+			_stop_idle_animation(card)
+			card.queue_free()
+		board_slot_map.erase(slot)
+		if card in board_cards: board_cards.erase(card)
+
+	# Calculate positions
 	var card_spacing := CARD_W + CARD_SPACING_BOARD
 	var total_width: float = active_cards.size() * CARD_W + (active_cards.size() - 1) * CARD_SPACING_BOARD
 	var container_width: float = home_cards_hbox.size.x if home_cards_hbox.size.x > 0 else 1100.0
 	var start_x: float = (container_width - total_width) / 2.0 + CARD_W / 2.0
 	
-	# Build a map of slot -> target position
 	var slot_positions: Dictionary = {}
-	var card_index := 0
+	for i in active_cards.size():
+		var data = active_cards[i]
+		slot_positions[data.slot] = Vector2(start_x + i * card_spacing, CARD_H / 2.0)
+	
+	# Update or Create cards
 	for data in active_cards:
-		var slot: int = data["slot"]
-		slot_positions[slot] = Vector2(start_x + card_index * card_spacing, CARD_H / 2.0)
-		card_index += 1
-	
-	# Remove cards that no longer exist in battle_manager
-	var slots_to_remove: Array = []
-	for slot in board_slot_map.keys():
-		if not active_slots.has(slot):
-			slots_to_remove.append(slot)
-	
-	for slot in slots_to_remove:
-		var card = board_slot_map[slot]
-		# Only free if valid and not already queued for deletion (might be dissolving)
-		if is_instance_valid(card) and not card.is_queued_for_deletion():
-			_stop_idle_animation(card)
-			card.queue_free()
-		board_slot_map.erase(slot)
-		if card in board_cards:
-			board_cards.erase(card)
-	
-	# Check which cards need to be added OR UPDATED
-	var new_slots: Array = []
-	var update_slots: Array = []
-	for data in active_cards:
-		var slot: int = data["slot"]
+		var slot = data.slot
+		var card_inst = data.inst
+		
 		if not board_slot_map.has(slot):
-			new_slots.append(data)
+			# New card creation
+			var card = _make_card()
+			if card:
+				_setup_as_board(card, card_inst, slot)
+				# Important: Set the meta name so we can detect changes later
+				card.set_meta("card_name", card_inst.data.card_name) 
+				
+				home_cards_hbox.add_child(card)
+				if card is Node2D: card.position = slot_positions[slot]
+				
+				board_cards.append(card)
+				board_slot_map[slot] = card
+				
+				# Add the animations here (moved from the deleted new_slots loop)
+				_animate_card_entrance(card, 0.0)
+				_start_idle_animation_delayed(card, 0.3)
 		else:
-			# Check if card data has changed (swap occurred)
-			var existing_card = board_slot_map[slot]
-			if is_instance_valid(existing_card):
-				var stored_card_name = existing_card.get_meta("card_name", "")
-				if stored_card_name != data["inst"].data.card_name:
-					# Card data changed - need to update visual
-					update_slots.append(data)
-	
-	# Update cards whose data changed (swap occurred)
-	for data in update_slots:
-		var card_inst = data["inst"]
-		var slot: int = data["slot"]
-		var old_card = board_slot_map[slot]
-		
-		# Remove old card
-		if is_instance_valid(old_card):
-			_stop_idle_animation(old_card)
-			old_card.queue_free()
-			if old_card in board_cards:
-				board_cards.erase(old_card)
-		
-		# Create new card with updated data
-		var card: Node = _make_card()
-		if card == null: continue
-		_setup_as_board(card, card_inst, slot)
-		card.set_meta("card_name", card_inst.data.card_name)  # Store for change detection
-		home_cards_hbox.add_child(card)
-		if card is Node2D and slot_positions.has(slot):
-			card.position = slot_positions[slot]
-		board_cards.append(card)
-		board_slot_map[slot] = card
-		_animate_card_entrance(card, 0.0)
-		_start_idle_animation_delayed(card, 0.3)
-	
-	# Slide existing cards to their new positions
-	for slot in board_slot_map.keys():
-		if slot_positions.has(slot):
+			# Existing card - move it
 			var card = board_slot_map[slot]
 			if is_instance_valid(card) and card is Node2D:
-				var target_pos: Vector2 = slot_positions[slot]
+				var target_pos = slot_positions[slot]
 				if card.position.distance_to(target_pos) > 5.0:
-					_stop_idle_animation(card)
-					var tween := create_tween()
-					tween.set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_CUBIC)
+					var tween = create_tween()
 					tween.tween_property(card, "position", target_pos, 0.25)
-					tween.finished.connect(func(): 
-						if is_instance_valid(card): _start_idle_animation(card)
-					)
 	
-	# Add new cards with entrance animation
-	for data in new_slots:
-		var card_inst = data["inst"]
-		var slot: int = data["slot"]
-		var card: Node = _make_card()
-		if card == null: continue
-		_setup_as_board(card, card_inst, slot)
-		card.set_meta("card_name", card_inst.data.card_name)  # Store for change detection
-		home_cards_hbox.add_child(card)
-		if card is Node2D and slot_positions.has(slot):
-			card.position = slot_positions[slot]
-		board_cards.append(card)
-		board_slot_map[slot] = card
-		_animate_card_entrance(card, 0.0)
-		_start_idle_animation_delayed(card, 0.3)
+	# The "for data in new_slots:" loop has been removed.
 
 # ============ CARD ANIMATIONS ============
 func _animate_card_entrance(card: Node, delay: float) -> void:
@@ -2021,35 +1952,34 @@ func _animate_card_selected(card: Node, selected: bool) -> void:
 		tween.finished.connect(func(): if is_instance_valid(card): _start_idle_animation(card))
 
 func _start_idle_animation(card: Node) -> void:
-	if not is_instance_valid(card): return
+	# GUARD: Strictly check validity to prevent loop warnings
+	if not is_instance_valid(card) or card.is_queued_for_deletion(): return
+	if not (card is Node2D or card is Control): return
+	
 	_stop_idle_animation(card)
 	
-	# CRITICAL FIX: The previous code only added steps for Node2D,
-	# causing an infinite 0-duration loop for Control nodes (UI cards).
-	# We now handle both types, or abort if neither.
-	if not (card is Node2D or card is Control):
-		return
-		
 	var tween := create_tween()
-	tween.set_loops() # Infinite loop
+	tween.set_loops()
+	idle_tween_map[card] = tween
 	
 	var float_amount := randf_range(3.0, 6.0)
-	var float_duration := randf_range(2.0, 3.0)
+	var float_duration := randf_range(2.0, 3.0) 
 	var base_y: float = card.position.y
 	
-	# This adds actual duration to the tween, preventing the freeze
-	# "position:y" property works for both Node2D and Control in Godot 4
-	tween.tween_property(card, "position:y", base_y - float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	tween.tween_property(card, "position:y", base_y + float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
-	idle_tween_map[card] = tween
-
+	tween.tween_property(card, "position:y", base_y - float_amount, float_duration)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(card, "position:y", base_y + float_amount, float_duration)\
+		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		
 func _start_idle_animation_delayed(card: Node, delay: float) -> void:
 	if not is_inside_tree(): return
 	var tree = get_tree()
 	if tree == null: return
+	
 	await tree.create_timer(delay).timeout
-	if is_instance_valid(card) and is_inside_tree(): 
+	
+	# Check validity again after the wait
+	if is_instance_valid(card) and is_inside_tree() and not card.is_queued_for_deletion():
 		_start_idle_animation(card)
 
 func _stop_idle_animation(card: Node) -> void:

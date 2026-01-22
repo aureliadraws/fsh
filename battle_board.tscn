@@ -42,6 +42,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="CardDisplay" parent="CardsInPlay/CardsVBoxContainer/Opponents" instance=ExtResource("4_utegp")]
+visible = false
 
 [node name="HomeCards" type="HBoxContainer" parent="CardsInPlay/CardsVBoxContainer"]
 custom_minimum_size = Vector2(0, 375)
@@ -49,6 +50,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="CardDisplay" parent="CardsInPlay/CardsVBoxContainer/HomeCards" instance=ExtResource("4_utegp")]
+visible = false
 
 [node name="CardHandContainer" type="Container" parent="."]
 layout_mode = 0
@@ -62,6 +64,7 @@ layout_mode = 2
 alignment = 1
 
 [node name="CardDisplay" parent="CardHandContainer/Card Hand" instance=ExtResource("4_utegp")]
+visible = false
 
 [node name="Options" type="Container" parent="."]
 layout_mode = 0
