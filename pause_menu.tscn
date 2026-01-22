@@ -1,0 +1,75 @@
+[gd_scene load_steps=3 format=3 uid="uid://pause_menu"]
+
+[ext_resource type="Script" path="res://scenes/roguelike/pause_menu.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://deck_viewer" path="res://scenes/roguelike/deck_viewer.tscn" id="2_deck"]
+
+[node name="PauseMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.6)
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -150.0
+offset_top = -180.0
+offset_right = 150.0
+offset_bottom = 180.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+theme_override_constants/separation = 15
+
+[node name="Title" type="Label" parent="Panel/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "PAUSED"
+horizontal_alignment = 1
+
+[node name="Resume" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Resume"
+
+[node name="ViewDeck" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "View Deck"
+
+[node name="Save" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Save Game"
+
+[node name="Options" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Options"
+
+[node name="QuitRun" type="Button" parent="Panel/VBoxContainer"]
+layout_mode = 2
+text = "Quit to Menu"
+
+[node name="DeckViewer" parent="." instance=ExtResource("2_deck")]
+visible = false

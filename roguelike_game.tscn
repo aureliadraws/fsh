@@ -1,0 +1,71 @@
+[gd_scene load_steps=16 format=3 uid="uid://bpaikcsngqn16"]
+
+[ext_resource type="Script" uid="uid://sa280mktepw3" path="res://scenes/roguelike/roguelike_game.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://dvkkxtrm35vk8" path="res://scenes/roguelike/map_screen.tscn" id="2_map"]
+[ext_resource type="PackedScene" uid="uid://dc11xi1u435gv" path="res://scenes/roguelike/battle_scene.tscn" id="3_battle"]
+[ext_resource type="PackedScene" uid="uid://6bungo8ilbh" path="res://scenes/roguelike/rest_screen.tscn" id="4_rest"]
+[ext_resource type="PackedScene" uid="uid://dg303y4mv6636" path="res://scenes/roguelike/salvage_screen.tscn" id="5_salvage"]
+[ext_resource type="PackedScene" uid="uid://k1h1iwfocol2" path="res://scenes/roguelike/mystery_screen.tscn" id="6_mystery"]
+[ext_resource type="PackedScene" uid="uid://cguencqclyfht" path="res://scenes/roguelike/merchant_screen.tscn" id="7_merchant"]
+[ext_resource type="PackedScene" uid="uid://0aoxa2r0oqth" path="res://scenes/roguelike/rewards_screen.tscn" id="8_rewards"]
+[ext_resource type="PackedScene" uid="uid://c4p4lf5wy77ha" path="res://scenes/roguelike/game_over_screen.tscn" id="9_gameover"]
+[ext_resource type="PackedScene" path="res://scenes/roguelike/workstation_screen.tscn" id="12_kd10a"]
+[ext_resource type="PackedScene" uid="uid://ca5pthaqj6kuo" path="res://scenes/roguelike/tutorial_screen.tscn" id="12_tutorial"]
+[ext_resource type="PackedScene" uid="uid://dc4ecrnyrwye4" path="res://scenes/roguelike/catch_viewer.tscn" id="13_br8dj"]
+[ext_resource type="PackedScene" path="res://scenes/roguelike/transition_manager.tscn" id="13_transition"]
+[ext_resource type="PackedScene" uid="uid://c7cb5naukiwcm" path="res://scenes/roguelike/roguelike_background.tscn" id="14_ve2iy"]
+[ext_resource type="PackedScene" uid="uid://by2wf2kfc1f76" path="res://scenes/menus/options3.tscn" id="15_options3"]
+
+[node name="RoguelikeGame" type="Node"]
+script = ExtResource("1_script")
+
+[node name="RoguelikeBackground" parent="." instance=ExtResource("14_ve2iy")]
+z_index = -10
+
+[node name="MapScreen" parent="." instance=ExtResource("2_map")]
+
+[node name="BattleLayer" type="CanvasLayer" parent="."]
+layer = 5
+visible = false
+
+[node name="BattleScene" parent="BattleLayer" instance=ExtResource("3_battle")]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+layer = 20
+
+[node name="RestScreen" parent="UILayer" instance=ExtResource("4_rest")]
+visible = false
+
+[node name="SalvageScreen" parent="UILayer" instance=ExtResource("5_salvage")]
+visible = false
+
+[node name="MysteryScreen" parent="UILayer" instance=ExtResource("6_mystery")]
+visible = false
+
+[node name="MerchantScreen" parent="UILayer" instance=ExtResource("7_merchant")]
+visible = false
+
+[node name="RewardsScreen" parent="UILayer" instance=ExtResource("8_rewards")]
+visible = false
+
+[node name="GameOverScreen" parent="UILayer" instance=ExtResource("9_gameover")]
+visible = false
+
+[node name="WorkstationScreen" parent="UILayer" instance=ExtResource("12_kd10a")]
+
+[node name="CatchViewer" parent="UILayer" instance=ExtResource("13_br8dj")]
+
+[node name="Options3Layer" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="Options3" parent="Options3Layer" instance=ExtResource("15_options3")]
+visible = false
+
+[node name="TutorialLayer" type="CanvasLayer" parent="."]
+layer = 60
+
+[node name="TutorialScreen" parent="TutorialLayer" instance=ExtResource("12_tutorial")]
+visible = false
+
+[node name="TransitionManager" parent="." instance=ExtResource("13_transition")]
+visible = false

@@ -1,0 +1,222 @@
+[gd_scene load_steps=19 format=3 uid="uid://beot6bkcxo4bg"]
+
+[ext_resource type="Script" uid="uid://dyh45sf3l785k" path="res://scenes/roguelike/card_display.gd" id="1_script"]
+[ext_resource type="Shader" uid="uid://mpy6fyodksfr" path="res://assets/drop_shadow.gdshader" id="2_uvd8f"]
+[ext_resource type="Texture2D" uid="uid://c5vjyim73dx1l" path="res://assets/cards/cardblank.png" id="3_dih3f"]
+[ext_resource type="Texture2D" uid="uid://ca0rqn8v8mxe2" path="res://assets/cards/cardbacksalvage.png" id="4_6io7t"]
+[ext_resource type="Texture2D" uid="uid://xaxr7l1a4s4" path="res://assets/cards/cardbacksalvagegold.png" id="5_2c5dm"]
+[ext_resource type="Shader" uid="uid://c63gynk2y74cj" path="res://assets/water_effect.gdshader" id="6_ygkf7"]
+[ext_resource type="Texture2D" uid="uid://doubakk48ad8o" path="res://assets/cards/cardsinker.png" id="7_iy27i"]
+[ext_resource type="Shader" uid="uid://dnp7n3qht5f6a" path="res://assets/shine_highlight.gdshader" id="8_vyo2c"]
+[ext_resource type="Texture2D" uid="uid://bv67gpmkc78pn" path="res://assets/cards/cardbaitsinkergold.png" id="9_g7817"]
+[ext_resource type="Shader" uid="uid://blltwunamk7r6" path="res://assets/float_drop_shadow.gdshader" id="10_2vyrg"]
+[ext_resource type="Texture2D" uid="uid://bd2iaglvragl2" path="res://assets/fish/kelpforest/sockeyesalmon.png" id="11_b8gpg"]
+[ext_resource type="Shader" uid="uid://b2y8cne7jstbg" path="res://assets/float.gdshader" id="12_36x28"]
+[ext_resource type="FontFile" uid="uid://b2h1oiuwns7jp" path="res://menu/font/BoldPixels.otf" id="13_ble6t"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gyeg0"]
+shader = ExtResource("2_uvd8f")
+shader_parameter/shadow_offset = Vector2(2, 4)
+shader_parameter/shadow_color = Color(0, 0, 0, 0.3)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gxntx"]
+shader = ExtResource("6_ygkf7")
+shader_parameter/intensity = 0.298000014155
+shader_parameter/base_water_color = Color(0.00024814712, 0.04139363, 0.12055797, 1)
+shader_parameter/highlight_scale = 0.31200001156012
+shader_parameter/clarity = 0.8110000385225
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hyxl8"]
+shader = ExtResource("8_vyo2c")
+shader_parameter/shine_color = Color(1, 1, 1, 1)
+shader_parameter/shine_speed = 1.0
+shader_parameter/shine_size = 0.01
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4k4hg"]
+shader = ExtResource("10_2vyrg")
+shader_parameter/float_speed = 0.70000001043084
+shader_parameter/float_height = 2.500000037253
+shader_parameter/rotation_amount = 0.03999999910592
+shader_parameter/shadow_offset = Vector2(1, 1)
+shader_parameter/shadow_color = Color(0.00050705974, 0.0071319235, 0.037093487, 0.42745098)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_aui7g"]
+shader = ExtResource("12_36x28")
+shader_parameter/float_speed = 0.70000001043084
+shader_parameter/float_height = 2.500000037253
+shader_parameter/rotation_amount = 0.03999999910592
+
+[node name="CardDisplay" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="CardShadow" type="TextureRect" parent="."]
+texture_filter = 3
+material = SubResource("ShaderMaterial_gyeg0")
+offset_left = -123.0
+offset_top = -170.0
+offset_right = -82.0
+offset_bottom = -113.0
+scale = Vector2(6, 6)
+texture = ExtResource("3_dih3f")
+
+[node name="Back" type="TextureRect" parent="."]
+texture_filter = 3
+offset_left = -123.0
+offset_top = -170.0
+offset_right = -82.0
+offset_bottom = -113.0
+scale = Vector2(6, 6)
+texture = ExtResource("4_6io7t")
+
+[node name="BackGold" type="TextureRect" parent="Back"]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("5_2c5dm")
+
+[node name="FishImageBackground" type="TextureRect" parent="."]
+texture_filter = 3
+offset_left = -123.00001
+offset_top = -170.0
+offset_right = -82.00001
+offset_bottom = -113.0
+scale = Vector2(6, 6)
+texture = ExtResource("3_dih3f")
+
+[node name="FishImageBackgroundEffect" type="ColorRect" parent="FishImageBackground"]
+material = SubResource("ShaderMaterial_gxntx")
+layout_mode = 0
+offset_left = 0.66666794
+offset_top = 5.833334
+offset_right = 39.333336
+offset_bottom = 32.0
+color = Color(0.0019100268, 0.07922012, 0.14277363, 1)
+
+[node name="Front" type="TextureRect" parent="."]
+texture_filter = 3
+offset_left = -123.00001
+offset_top = -170.0
+offset_right = -82.00001
+offset_bottom = -113.0
+scale = Vector2(6, 6)
+texture = ExtResource("7_iy27i")
+
+[node name="FrontGold" type="TextureRect" parent="Front"]
+material = SubResource("ShaderMaterial_hyxl8")
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+texture = ExtResource("9_g7817")
+
+[node name="FishShadow" type="TextureRect" parent="."]
+texture_filter = 3
+material = SubResource("ShaderMaterial_4k4hg")
+offset_left = -108.0
+offset_top = -117.0
+offset_right = 110.0
+offset_bottom = -9.0
+texture = ExtResource("11_b8gpg")
+
+[node name="FishImage" type="TextureRect" parent="."]
+texture_filter = 3
+material = SubResource("ShaderMaterial_aui7g")
+offset_left = -108.0
+offset_top = -118.0
+offset_right = 109.0
+offset_bottom = -9.5
+texture = ExtResource("11_b8gpg")
+expand_mode = 3
+
+[node name="FishName" type="Label" parent="."]
+texture_filter = 3
+offset_left = -94.0
+offset_top = -153.0
+offset_right = 61.0
+offset_bottom = -121.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 31
+text = "FISH NAME"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="FishName2" type="Label" parent="."]
+visible = false
+texture_filter = 3
+offset_left = -94.0
+offset_top = -153.0
+offset_right = 92.0
+offset_bottom = -121.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 31
+text = "FISH NAME"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Bait" type="Label" parent="."]
+texture_filter = 3
+offset_left = 77.0
+offset_top = -154.0
+offset_right = 103.0
+offset_bottom = -120.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 29
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Hook" type="Label" parent="."]
+texture_filter = 3
+offset_left = -102.0
+offset_top = 98.0
+offset_right = -42.0
+offset_bottom = 164.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 65
+text = "2"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Line" type="Label" parent="."]
+texture_filter = 3
+offset_left = 48.0
+offset_top = 98.0
+offset_right = 108.0
+offset_bottom = 164.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 65
+text = "3"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Sinker" type="Label" parent="."]
+texture_filter = 3
+offset_left = -104.0
+offset_top = 4.0
+offset_right = 104.0
+offset_bottom = 36.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 24
+text = "SINKER"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SinkerDesc" type="Label" parent="."]
+texture_filter = 3
+offset_left = -104.0
+offset_top = 29.0
+offset_right = 105.0
+offset_bottom = 82.0
+theme_override_colors/font_color = Color(0, 0.043137256, 0.18039216, 1)
+theme_override_constants/line_spacing = -4
+theme_override_fonts/font = ExtResource("13_ble6t")
+theme_override_font_sizes/font_size = 16
+text = "description and words and description and words and description and words and description and words and "
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3

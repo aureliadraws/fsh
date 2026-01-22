@@ -1,0 +1,610 @@
+[gd_scene load_steps=29 format=3 uid="uid://c7cb5naukiwcm"]
+
+[ext_resource type="Shader" uid="uid://j1b0t1o146qg" path="res://assets/sky.gdshader" id="1_fx7gp"]
+[ext_resource type="Shader" uid="uid://v8647v2h33mq" path="res://assets/float_lighting.gdshader" id="2_fx7gp"]
+[ext_resource type="Texture2D" uid="uid://druj1w15l0e7q" path="res://assets/fish/Mackerel.png" id="2_yef6s"]
+[ext_resource type="Texture2D" uid="uid://ioxm5xj4s613" path="res://assets/boat/boatdarker.png" id="3_coxf6"]
+[ext_resource type="Texture2D" uid="uid://cngpkh4essl8e" path="res://assets/fish/kelpbass.png" id="3_tlbia"]
+[ext_resource type="Texture2D" uid="uid://c18fxciyds5q0" path="res://assets/fish/salmon.png" id="4_k23tm"]
+[ext_resource type="Shader" uid="uid://15vuluwcmmje" path="res://assets/wave_lighting.gdshader" id="4_urit1"]
+[ext_resource type="Shader" uid="uid://dluweoy8hhj8d" path="res://assets/daylighting.gdshader" id="5_atkyu"]
+[ext_resource type="Texture2D" uid="uid://sd78seo2ocmm" path="res://assets/fish/sardine.png" id="5_h7p3j"]
+[ext_resource type="Texture2D" uid="uid://cd8pu5w5eggku" path="res://icon.svg" id="6_urit1"]
+[ext_resource type="Shader" uid="uid://s2jqohkibrua" path="res://assets/foliage_generator.gdshader" id="7_v2nqk"]
+[ext_resource type="Texture2D" uid="uid://cuayd2y6pvchm" path="res://assets/plants/kelp forest/plant_kelp_kelpback2.png" id="8_htja2"]
+[ext_resource type="Texture2D" uid="uid://2g4vxnqe0l2u" path="res://assets/plants/kelp forest/plant_kelp_kelpback.png" id="9_emgok"]
+[ext_resource type="Texture2D" uid="uid://xyetwqgijnjx" path="res://assets/plants/kelp forest/plant_kelp_kelp3.png" id="10_jc1rl"]
+[ext_resource type="Texture2D" uid="uid://cvfr506n5k26n" path="res://assets/plants/kelp forest/plant_kelp_kelp4.png" id="11_srxl3"]
+[ext_resource type="Texture2D" uid="uid://buroedb5lcstv" path="res://assets/plants/kelp forest/plant_kelp_kelp2.png" id="14_e3tb5"]
+[ext_resource type="Shader" uid="uid://bsoxpy0bqv1ts" path="res://assets/fish_generator.gdshader" id="15_tlbia"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qvus1"]
+shader = ExtResource("1_fx7gp")
+shader_parameter/pixel_size = 6.0000002375
+shader_parameter/time_speed = 0.030000001425
+shader_parameter/time_offset = 0.0
+shader_parameter/day_top_color = Color(0.4, 0.6, 1, 1)
+shader_parameter/day_bottom_color = Color(0.8117647, 0.9882353, 0.9843137, 1)
+shader_parameter/afternoon_top_color = Color(0.5, 0.5, 0.9, 1)
+shader_parameter/afternoon_bottom_color = Color(0.9, 0.7, 0.5, 1)
+shader_parameter/dusk_top_color = Color(0.2, 0.2, 0.5, 1)
+shader_parameter/dusk_bottom_color = Color(1, 0.5, 0.3, 1)
+shader_parameter/night_top_color = Color(0.05, 0.05, 0.15, 1)
+shader_parameter/night_bottom_color = Color(0.1, 0.1, 0.3, 1)
+shader_parameter/dawn_top_color = Color(0.3, 0.3, 0.6, 1)
+shader_parameter/dawn_bottom_color = Color(1, 0.6, 0.4, 1)
+shader_parameter/sun_color = Color(1, 0.95, 0.7, 1)
+shader_parameter/moon_color = Color(0.9, 0.9, 1, 1)
+shader_parameter/sun_size = 0.11000000452648
+shader_parameter/moon_size = 0.04
+shader_parameter/sun_x_position = 0.19500000600262
+shader_parameter/moon_x_position = 0.75
+shader_parameter/celestial_arc_height = 0.72100002772773
+shader_parameter/star_count = 500
+shader_parameter/star_brightness = 2.0
+shader_parameter/star_twinkle_speed = 4.3490002065775
+shader_parameter/star_vertical_range = 0.80000001192093
+shader_parameter/star_horizontal_range = 3.0
+shader_parameter/star_variation = 1.0
+shader_parameter/enable_clouds = true
+shader_parameter/cloud_coverage = 0.0
+shader_parameter/cloud_speed = 0.5950000282625
+shader_parameter/cloud_color = Color(0.9670598, 0.97903925, 0.7902785, 1)
+shader_parameter/cloud_threshold = 0.51100002194343
+shader_parameter/cloud_height = 0.6610000313975
+shader_parameter/cloud_variation = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ffqmr"]
+shader = ExtResource("4_urit1")
+shader_parameter/pixel_size = 1.0
+shader_parameter/time_speed = 0.030000001425
+shader_parameter/time_offset = 0.0
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.1833032, 5.986262e-05, 0.213058, 1)
+shader_parameter/dawn_tint = Color(0.72643465, 0.50973445, 0.73087686, 1)
+shader_parameter/tint_strength = 0.58000002755
+shader_parameter/liquid_level = 0.510000024225
+shader_parameter/liquid_color = Color(0.09803922, 0.5529412, 0.63529414, 1)
+shader_parameter/foam_color = Color(0.5144212, 0.8455143, 0.93608713, 1)
+shader_parameter/wave_top_layer_1 = Color(1, 1, 1, 0.8)
+shader_parameter/wave_top_layer_2 = Color(0.7, 0.9, 1, 0.6)
+shader_parameter/wave_layer_1_height = 0.0
+shader_parameter/wave_layer_2_height = 0.0
+shader_parameter/wave_layer_transparency = 0.3
+shader_parameter/wave_amplitude = 0.030000001425
+shader_parameter/wave_frequency = 2.2410001064475
+shader_parameter/wave_speed = 1.9750000938125
+shader_parameter/distortion_strength = 0.50000002375
+shader_parameter/wave_distortion_amount = 0.02
+shader_parameter/foam_thickness = 0.030000001425
+shader_parameter/base_water_color = Color(0.09803922, 0.5529412, 0.63529414, 1)
+shader_parameter/clarity = 0.23600001121
+shader_parameter/enable_screen_distortion = true
+
+[sub_resource type="Shader" id="Shader_k23tm"]
+code = "// Swimming Fish Shader with 10 Texture Slots - Fixed Aspect Ratio
+shader_type canvas_item;
+render_mode blend_mix;
+
+// === PIXEL ART PROPERTIES ===
+uniform float pixel_size : hint_range(1.0, 10.0) = 6.0;
+
+// === TEXTURE SLOTS (leave empty if not used) ===
+uniform int texture_count : hint_range(1, 10) = 4;
+uniform sampler2D fish_texture_1 : filter_nearest;
+uniform sampler2D fish_texture_2 : filter_nearest;
+uniform sampler2D fish_texture_3 : filter_nearest;
+uniform sampler2D fish_texture_4 : filter_nearest;
+uniform sampler2D fish_texture_5 : filter_nearest;
+uniform sampler2D fish_texture_6 : filter_nearest;
+uniform sampler2D fish_texture_7 : filter_nearest;
+uniform sampler2D fish_texture_8 : filter_nearest;
+uniform sampler2D fish_texture_9 : filter_nearest;
+uniform sampler2D fish_texture_10 : filter_nearest;
+
+// === TIME PROPERTIES (should match sky shader) ===
+uniform float time_speed : hint_range(0.0, 5.0) = 1.0;
+uniform float time_offset : hint_range(0.0, 1.0) = 0.0;
+
+// === FISH PROPERTIES ===
+uniform float swim_speed : hint_range(0.0, 2.0) = 0.4;
+uniform float spawn_rate : hint_range(0.0, 1.0) = 0.25;
+uniform float depth_range_min : hint_range(0.0, 1.0) = 0.3;
+uniform float depth_range_max : hint_range(0.0, 1.0) = 0.75;
+uniform float size_variation : hint_range(0.0, 2.0) = 0.8;
+uniform float base_scale : hint_range(0.01, 1.0) = 0.05; // Size relative to screen
+uniform float swim_wobble : hint_range(0.0, 0.1) = 0.03;
+uniform float vertical_swim : hint_range(0.0, 0.2) = 0.08;
+uniform float tail_wiggle_speed : hint_range(0.0, 10.0) = 6.0;
+uniform float depth_fade : hint_range(0.0, 1.0) = 0.3;
+
+// === LIGHTING TINT COLORS ===
+uniform vec3 day_tint : source_color = vec3(1.0, 1.0, 1.0);
+uniform vec3 afternoon_tint : source_color = vec3(1.0, 0.95, 0.85);
+uniform vec3 dusk_tint : source_color = vec3(1.0, 0.7, 0.6);
+uniform vec3 night_tint : source_color = vec3(0.3, 0.35, 0.5);
+uniform vec3 dawn_tint : source_color = vec3(0.9, 0.8, 0.9);
+uniform float tint_strength : hint_range(0.0, 1.0) = 0.5;
+
+// === UTILITY FUNCTIONS ===
+float random(vec2 st) {
+    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
+}
+
+vec3 smoothstep_color(vec3 color1, vec3 color2, float t) {
+    float smooth_t = smoothstep(0.0, 1.0, t);
+    return mix(color1, color2, smooth_t);
+}
+
+mat2 rotation_matrix(float angle) {
+    float s = sin(angle);
+    float c = cos(angle);
+    return mat2(vec2(c, -s), vec2(s, c));
+}
+
+vec4 sample_fish_texture(int texture_index, vec2 uv) {
+    if (texture_index == 0) {
+        return texture(fish_texture_1, uv);
+    } else if (texture_index == 1) {
+        return texture(fish_texture_2, uv);
+    } else if (texture_index == 2) {
+        return texture(fish_texture_3, uv);
+    } else if (texture_index == 3) {
+        return texture(fish_texture_4, uv);
+    } else if (texture_index == 4) {
+        return texture(fish_texture_5, uv);
+    } else if (texture_index == 5) {
+        return texture(fish_texture_6, uv);
+    } else if (texture_index == 6) {
+        return texture(fish_texture_7, uv);
+    } else if (texture_index == 7) {
+        return texture(fish_texture_8, uv);
+    } else if (texture_index == 8) {
+        return texture(fish_texture_9, uv);
+    } else {
+        return texture(fish_texture_10, uv);
+    }
+}
+
+vec2 get_texture_size(int texture_index) {
+    if (texture_index == 0) {
+        return vec2(textureSize(fish_texture_1, 0));
+    } else if (texture_index == 1) {
+        return vec2(textureSize(fish_texture_2, 0));
+    } else if (texture_index == 2) {
+        return vec2(textureSize(fish_texture_3, 0));
+    } else if (texture_index == 3) {
+        return vec2(textureSize(fish_texture_4, 0));
+    } else if (texture_index == 4) {
+        return vec2(textureSize(fish_texture_5, 0));
+    } else if (texture_index == 5) {
+        return vec2(textureSize(fish_texture_6, 0));
+    } else if (texture_index == 6) {
+        return vec2(textureSize(fish_texture_7, 0));
+    } else if (texture_index == 7) {
+        return vec2(textureSize(fish_texture_8, 0));
+    } else if (texture_index == 8) {
+        return vec2(textureSize(fish_texture_9, 0));
+    } else {
+        return vec2(textureSize(fish_texture_10, 0));
+    }
+}
+
+bool is_texture_valid(int texture_index) {
+    vec2 tex_size = get_texture_size(texture_index);
+    return tex_size.x > 1.0 && tex_size.y > 1.0;
+}
+
+void fragment() {
+    vec2 uv = UV;
+
+    // Calculate time of day
+    float time_of_day = fract((TIME * time_speed * 0.1) + time_offset);
+
+    // Calculate current tint
+    vec3 current_tint;
+    if (time_of_day < 0.2) {
+        current_tint = day_tint;
+    }
+    else if (time_of_day < 0.3) {
+        float t = (time_of_day - 0.2) / 0.1;
+        current_tint = smoothstep_color(day_tint, afternoon_tint, t);
+    }
+    else if (time_of_day < 0.4) {
+        current_tint = afternoon_tint;
+    }
+    else if (time_of_day < 0.45) {
+        float t = (time_of_day - 0.4) / 0.05;
+        current_tint = smoothstep_color(afternoon_tint, dusk_tint, t);
+    }
+    else if (time_of_day < 0.5) {
+        current_tint = dusk_tint;
+    }
+    else if (time_of_day < 0.55) {
+        float t = (time_of_day - 0.5) / 0.05;
+        current_tint = smoothstep_color(dusk_tint, night_tint, t);
+    }
+    else if (time_of_day < 0.8) {
+        current_tint = night_tint;
+    }
+    else if (time_of_day < 0.85) {
+        float t = (time_of_day - 0.8) / 0.05;
+        current_tint = smoothstep_color(night_tint, dawn_tint, t);
+    }
+    else if (time_of_day < 0.95) {
+        current_tint = dawn_tint;
+    }
+    else {
+        float t = (time_of_day - 0.95) / 0.05;
+        current_tint = smoothstep_color(dawn_tint, day_tint, t);
+    }
+
+    vec4 final_color = vec4(0.0);
+
+    int max_fish = 10;
+
+    for (int i = 0; i < max_fish; i++) {
+        float fish_seed = float(i) * 456.789;
+
+        if (random(vec2(fish_seed, 0.0)) > spawn_rate) {
+            continue;
+        }
+
+        // Randomly select texture from available count
+        int texture_index = int(floor(random(vec2(fish_seed, 20.0)) * float(texture_count)));
+
+        // Skip if texture not assigned
+        if (!is_texture_valid(texture_index)) {
+            continue;
+        }
+
+        // Get actual texture dimensions
+        vec2 tex_size = get_texture_size(texture_index);
+        float aspect_ratio = tex_size.x / tex_size.y;
+
+        float spawn_time = random(vec2(fish_seed, 1.0)) * 150.0;
+        float life_cycle = fract((TIME * swim_speed * 0.08) + spawn_time);
+
+        // Determine direction
+        bool swim_right = random(vec2(fish_seed, 2.0)) > 0.5;
+
+        float x_pos;
+        if (swim_right) {
+            x_pos = -0.2 + (life_cycle * 1.4);
+        } else {
+            x_pos = 1.2 - (life_cycle * 1.4);
+        }
+
+        // Random depth
+        float y_base = mix(depth_range_min, depth_range_max, random(vec2(fish_seed, 3.0)));
+
+        // Add vertical swimming motion
+        float vertical_phase = life_cycle * 6.28318 * 2.0 + fish_seed;
+        float y_pos = y_base + sin(vertical_phase) * vertical_swim;
+
+        // Random scale variation
+        float scale_mult = 0.5 + random(vec2(fish_seed, 4.0)) * size_variation;
+        float final_scale = base_scale * scale_mult;
+
+        // Create scale vec2 that preserves aspect ratio
+        float scale_y = final_scale;
+        float scale_x = final_scale * aspect_ratio;
+
+        // Tail wiggle animation
+        float wobble_angle = sin(TIME * tail_wiggle_speed + fish_seed * 10.0) * swim_wobble * scale_mult;
+
+        // Slight body tilt when swimming up/down
+        float vertical_velocity = cos(vertical_phase) * vertical_swim;
+        float tilt_angle = vertical_velocity * 0.3;
+
+        float rotation = wobble_angle + tilt_angle;
+
+        // Transform UV to fish space
+        vec2 fish_uv = uv - vec2(x_pos, y_pos);
+
+        // Flip horizontally if swimming left
+        if (!swim_right) {
+            fish_uv.x = -fish_uv.x;
+        }
+
+        fish_uv = rotation_matrix(-rotation) * fish_uv;
+
+        // Apply aspect-ratio preserving scale
+        fish_uv.x /= scale_x;
+        fish_uv.y /= scale_y;
+
+        fish_uv += 0.5;
+
+        // Check bounds
+        if (fish_uv.x >= 0.0 && fish_uv.x <= 1.0 &&
+            fish_uv.y >= 0.0 && fish_uv.y <= 1.0) {
+
+            vec4 fish_color = sample_fish_texture(texture_index, fish_uv);
+
+            if (fish_color.a > 0.01) {
+                // Apply lighting tint with variation
+                float tint_variation = 0.9 + random(vec2(fish_seed, 5.0)) * 0.2;
+                vec3 varied_tint = current_tint * tint_variation;
+                fish_color.rgb = mix(fish_color.rgb, fish_color.rgb * varied_tint, tint_strength);
+
+                // Add subtle color variation per fish
+                float hue_shift = (random(vec2(fish_seed, 6.0)) - 0.5) * 0.08;
+                fish_color.rgb += vec3(hue_shift * 0.15, hue_shift * 0.1, hue_shift * 0.2);
+
+                // Fade in/out at lifecycle edges
+                float fade = smoothstep(0.0, 0.15, life_cycle) * smoothstep(1.0, 0.85, life_cycle);
+                fish_color.a *= fade;
+
+                // Depth-based darkening
+                float depth_normalized = (y_pos - depth_range_min) / (depth_range_max - depth_range_min);
+                float depth_darken = 1.0 - (depth_normalized * depth_fade);
+                fish_color.rgb *= depth_darken;
+
+                // Slight alpha variation for depth layering
+                float alpha_variation = 0.85 + random(vec2(fish_seed, 7.0)) * 0.15;
+                fish_color.a *= alpha_variation;
+
+                // Add subtle shadow underneath (only for deeper fish)
+                if (depth_normalized > 0.5) {
+                    float shadow_strength = (depth_normalized - 0.5) * 0.2;
+                    fish_color.rgb *= (1.0 - shadow_strength);
+                }
+
+                // Alpha blend
+                final_color.rgb = mix(final_color.rgb, fish_color.rgb, fish_color.a);
+                final_color.a = max(final_color.a, fish_color.a);
+            }
+        }
+    }
+
+    COLOR = final_color;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ir7tr"]
+shader = SubResource("Shader_k23tm")
+shader_parameter/pixel_size = 6.0
+shader_parameter/texture_count = 4
+shader_parameter/fish_texture_1 = ExtResource("2_yef6s")
+shader_parameter/fish_texture_2 = ExtResource("3_tlbia")
+shader_parameter/fish_texture_3 = ExtResource("4_k23tm")
+shader_parameter/fish_texture_4 = ExtResource("5_h7p3j")
+shader_parameter/time_speed = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/swim_speed = 1.0000000475
+shader_parameter/spawn_rate = 0.52400002489
+shader_parameter/depth_range_min = 0.6450000306375
+shader_parameter/depth_range_max = 0.7790000370025
+shader_parameter/size_variation = 1.0070000478325
+shader_parameter/base_scale = 0.08
+shader_parameter/swim_wobble = 0.0570000027075
+shader_parameter/vertical_swim = 0.050000002375
+shader_parameter/tail_wiggle_speed = 4.8510002304225
+shader_parameter/depth_fade = 1.0
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.638000030305
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j7vvl"]
+shader = ExtResource("7_v2nqk")
+shader_parameter/pixel_size = 6.0
+shader_parameter/texture_count = 2
+shader_parameter/foliage_texture_1 = ExtResource("8_htja2")
+shader_parameter/foliage_texture_2 = ExtResource("9_emgok")
+shader_parameter/foliage_texture_3 = ExtResource("10_jc1rl")
+shader_parameter/foliage_texture_4 = ExtResource("11_srxl3")
+shader_parameter/time_speed = 0.030000001425
+shader_parameter/time_offset = 0.0
+shader_parameter/scroll_speed = 0.170000008075
+shader_parameter/spawn_rate = 0.718000034105
+shader_parameter/ground_level = 0.8950000425125
+shader_parameter/size_variation = 1.07600005111
+shader_parameter/rotation_variation = 0.43600002071
+shader_parameter/base_scale = 0.12
+shader_parameter/sway_amount = 0.10000000149012
+shader_parameter/sway_speed = 1.8450000876375
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.6150000292125
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pxy1g"]
+shader = ExtResource("2_fx7gp")
+shader_parameter/float_speed = 0.80000001192096
+shader_parameter/float_height = 1.30000001937156
+shader_parameter/rotation_amount = 0.05000000074506
+shader_parameter/time_speed = 0.030000001425
+shader_parameter/time_offset = 0.0
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.5
+shader_parameter/enable_rim_light = true
+shader_parameter/rim_light_color = Color(1, 0.95, 0.7, 1)
+shader_parameter/rim_light_intensity = 1.0
+shader_parameter/rim_thickness = 2.0
+shader_parameter/sun_x_position = 0.25
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_h7p3j"]
+shader = ExtResource("15_tlbia")
+shader_parameter/pixel_size = 6.0
+shader_parameter/texture_count = 2
+shader_parameter/fish_texture_1 = ExtResource("3_tlbia")
+shader_parameter/fish_texture_2 = ExtResource("2_yef6s")
+shader_parameter/time_speed = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/swim_speed = 0.4
+shader_parameter/spawn_rate = 0.5370000255075
+shader_parameter/depth_range_min = 0.690000032775
+shader_parameter/depth_range_max = 0.7390000351025
+shader_parameter/size_variation = 0.8
+shader_parameter/base_scale = 0.05
+shader_parameter/swim_wobble = 0.03
+shader_parameter/vertical_swim = 0.08
+shader_parameter/tail_wiggle_speed = 6.0
+shader_parameter/depth_fade = 0.3
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.5
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_n7xnn"]
+load_path = "res://.godot/imported/plant_kelp_kelp1.png-d035210519731cfc421ca9dfe7bbb7e0.ctex"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qwsth"]
+shader = ExtResource("7_v2nqk")
+shader_parameter/pixel_size = 6.0
+shader_parameter/texture_count = 4
+shader_parameter/foliage_texture_1 = SubResource("CompressedTexture2D_n7xnn")
+shader_parameter/foliage_texture_2 = ExtResource("14_e3tb5")
+shader_parameter/foliage_texture_3 = ExtResource("10_jc1rl")
+shader_parameter/foliage_texture_4 = ExtResource("11_srxl3")
+shader_parameter/time_speed = 0.030000001425
+shader_parameter/time_offset = 0.0
+shader_parameter/scroll_speed = 0.350000016625
+shader_parameter/spawn_rate = 0.718000034105
+shader_parameter/ground_level = 0.8950000425125
+shader_parameter/size_variation = 1.07600005111
+shader_parameter/rotation_variation = 0.43600002071
+shader_parameter/base_scale = 0.12
+shader_parameter/sway_amount = 0.10000000149012
+shader_parameter/sway_speed = 1.7600000836
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.6150000292125
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_v2nqk"]
+shader = ExtResource("15_tlbia")
+shader_parameter/pixel_size = 6.0
+shader_parameter/texture_count = 4
+shader_parameter/fish_texture_1 = ExtResource("2_yef6s")
+shader_parameter/fish_texture_2 = ExtResource("3_tlbia")
+shader_parameter/fish_texture_3 = ExtResource("4_k23tm")
+shader_parameter/fish_texture_4 = ExtResource("5_h7p3j")
+shader_parameter/time_speed = 1.0
+shader_parameter/time_offset = 0.0
+shader_parameter/swim_speed = 1.0950000520125
+shader_parameter/spawn_rate = 0.52400002489
+shader_parameter/depth_range_min = 0.6450000306375
+shader_parameter/depth_range_max = 0.7790000370025
+shader_parameter/size_variation = 1.0070000478325
+shader_parameter/base_scale = 0.06000000215148
+shader_parameter/swim_wobble = 0.0570000027075
+shader_parameter/vertical_swim = 0.050000002375
+shader_parameter/tail_wiggle_speed = 4.8510002304225
+shader_parameter/depth_fade = 1.0
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.638000030305
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fwue2"]
+shader = ExtResource("5_atkyu")
+shader_parameter/pixel_size = 6.0
+shader_parameter/time_speed = 0.030000001425
+shader_parameter/time_offset = 0.0
+shader_parameter/day_tint = Color(1, 1, 1, 1)
+shader_parameter/afternoon_tint = Color(1, 0.95, 0.85, 1)
+shader_parameter/dusk_tint = Color(1, 0.7, 0.6, 1)
+shader_parameter/night_tint = Color(0.3, 0.35, 0.5, 1)
+shader_parameter/dawn_tint = Color(0.9, 0.8, 0.9, 1)
+shader_parameter/tint_strength = 0.4770000226575
+shader_parameter/enable_rim_light = true
+shader_parameter/rim_light_color = Color(1, 0.95, 0.7, 1)
+shader_parameter/rim_light_intensity = 1.690000080275
+shader_parameter/rim_thickness = 1.3150000149625
+shader_parameter/sun_x_position = 0.25
+shader_parameter/sun_y_influence = 0.3
+
+[node name="RoguelikeBackground" type="Node2D"]
+
+[node name="Sky" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_qvus1")
+offset_left = -2.0
+offset_top = -4.0
+offset_right = 1930.0
+offset_bottom = 1082.0
+
+[node name="Wave2" type="ColorRect" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_ffqmr")
+offset_left = -402.0
+offset_top = 417.0
+offset_right = 2289.0
+offset_bottom = 1088.0
+color = Color(0.09803922, 0.5529412, 0.63529414, 1)
+
+[node name="BackFish" type="Sprite2D" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_ir7tr")
+position = Vector2(970, 585)
+scale = Vector2(15.8359375, 15.8359375)
+texture = ExtResource("6_urit1")
+
+[node name="BackFoliage" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_j7vvl")
+position = Vector2(959.00006, 222.99997)
+scale = Vector2(15.273438, 15.273438)
+texture = ExtResource("6_urit1")
+
+[node name="Boat" type="TextureRect" parent="."]
+texture_filter = 3
+material = SubResource("ShaderMaterial_pxy1g")
+offset_left = 105.0
+offset_top = 153.0
+offset_right = 281.0
+offset_bottom = 287.0
+scale = Vector2(6, 6)
+texture = ExtResource("3_coxf6")
+stretch_mode = 2
+
+[node name="Fish" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_h7p3j")
+position = Vector2(973.3753, 666.844)
+scale = Vector2(15.587887, 15.359926)
+texture = ExtResource("6_urit1")
+
+[node name="Foliage" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_qwsth")
+position = Vector2(959.00006, 233)
+scale = Vector2(15.273438, 15.273438)
+texture = ExtResource("6_urit1")
+
+[node name="FrontFish" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_v2nqk")
+position = Vector2(951, 668)
+scale = Vector2(15.492184, 15.265621)
+texture = ExtResource("6_urit1")
+
+[node name="Wave" type="ColorRect" parent="."]
+material = SubResource("ShaderMaterial_ffqmr")
+offset_left = -373.0
+offset_top = 416.0
+offset_right = 2318.0
+offset_bottom = 1087.0
+color = Color(0.09803922, 0.5529412, 0.63529414, 1)
+
+[node name="shading" type="ColorRect" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_fwue2")
+offset_right = 1928.0
+offset_bottom = 1086.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0)
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]

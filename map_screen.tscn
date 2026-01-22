@@ -1,0 +1,117 @@
+[gd_scene load_steps=3 format=3 uid="uid://dvkkxtrm35vk8"]
+
+[ext_resource type="Script" uid="uid://lrgovu82jd8l" path="res://scenes/roguelike/map_ui.gd" id="1_ui"]
+[ext_resource type="Script" uid="uid://d1sirpbgvtdbi" path="res://scenes/roguelike/map_manager.gd" id="2_manager"]
+
+[node name="MapScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ui")
+
+[node name="MapManager" type="Node" parent="."]
+script = ExtResource("2_manager")
+
+[node name="AreaLabel" type="Label" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 20.0
+offset_right = 150.0
+offset_bottom = 60.0
+grow_horizontal = 2
+text = "THE SHALLOWS"
+horizontal_alignment = 1
+
+[node name="MapContainer" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Lines" type="Control" parent="MapContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Nodes" type="Control" parent="MapContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Legend" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -230.0
+offset_right = 180.0
+offset_bottom = -20.0
+grow_vertical = 0
+
+[node name="Title" type="Label" parent="Legend"]
+layout_mode = 2
+text = "LEGEND"
+
+[node name="Combat" type="Label" parent="Legend"]
+layout_mode = 2
+text = "⚔️ Combat - Battle fish"
+
+[node name="Elite" type="Label" parent="Legend"]
+layout_mode = 2
+text = "💀 Elite - Harder battle"
+
+[node name="Salvage" type="Label" parent="Legend"]
+layout_mode = 2
+text = "📦 Salvage - Get new cards"
+
+[node name="Rest" type="Label" parent="Legend"]
+layout_mode = 2
+text = "⚓ Rest - Heal boat"
+
+[node name="Mystery" type="Label" parent="Legend"]
+layout_mode = 2
+text = "❓ Mystery - Random event"
+
+[node name="Merchant" type="Label" parent="Legend"]
+layout_mode = 2
+text = "💰 Merchant - Buy cards"
+
+[node name="Workstation" type="Label" parent="Legend"]
+layout_mode = 2
+text = "🔧 Workstation - Combine cards"
+
+[node name="Boss" type="Label" parent="Legend"]
+layout_mode = 2
+text = "👑 Boss - Final area boss"
+
+[node name="Instructions" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -60.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Click an available node to travel"
+horizontal_alignment = 2

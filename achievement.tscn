@@ -1,0 +1,51 @@
+[gd_scene load_steps=3 format=3 uid="uid://dqv81udtwv0dp"]
+
+[ext_resource type="Texture2D" uid="uid://dqtai8cfsofyb" path="res://assets/menu/achievement.png" id="1_gyma3"]
+[ext_resource type="FontFile" uid="uid://b2h1oiuwns7jp" path="res://menu/font/BoldPixels.otf" id="2_sw3lt"]
+
+[node name="Achievement" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="AchievementBackground" type="TextureRect" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 1468.0
+offset_top = 803.0
+offset_right = 1538.0
+offset_bottom = 844.0
+scale = Vector2(6, 6)
+texture = ExtResource("1_gyma3")
+
+[node name="AchievementName" type="Label" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 1501.0
+offset_top = 891.0
+offset_right = 1855.0
+offset_bottom = 931.0
+theme_override_colors/font_color = Color(0.036463737, 0.33423084, 0.4361212, 1)
+theme_override_fonts/font = ExtResource("2_sw3lt")
+theme_override_font_sizes/font_size = 39
+text = "HARD MODE"
+horizontal_alignment = 1
+
+[node name="AchievementDesc" type="Label" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 1487.0
+offset_top = 940.0
+offset_right = 1869.0
+offset_bottom = 1034.0
+theme_override_colors/font_color = Color(0.036463737, 0.33423084, 0.4361212, 1)
+theme_override_constants/line_spacing = -10
+theme_override_fonts/font = ExtResource("2_sw3lt")
+theme_override_font_sizes/font_size = 32
+text = "Name your Sailer 'Olamide'.
+*Not actually, btw."
+horizontal_alignment = 1
+autowrap_mode = 2

@@ -1,0 +1,281 @@
+[gd_scene load_steps=10 format=3 uid="uid://bijop6oibf1xc"]
+
+[ext_resource type="Script" uid="uid://bm0vtari4ljdr" path="res://scenes/roguelike/cooking_screen.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cedk3ia5tb52w" path="res://assets/menu/Sprites/UI_NoteBook_Banner04a.png" id="2_n4nc6"]
+[ext_resource type="Texture2D" uid="uid://bvyol6f5fav7o" path="res://assets/menu/new ui/UI_TravelBook_BookPageLeft01a.png" id="2_tggj5"]
+[ext_resource type="Texture2D" uid="uid://de81nbhynancq" path="res://assets/menu/new ui/arrow.png" id="3_n4nc6"]
+[ext_resource type="Texture2D" uid="uid://c1i0puovj7e6n" path="res://assets/menu/new ui/UI_TravelBook_BookPageRight01a.png" id="4_v8byu"]
+[ext_resource type="Texture2D" uid="uid://cngpkh4essl8e" path="res://assets/fish/kelpbass.png" id="5_14k1h"]
+[ext_resource type="FontFile" uid="uid://b2h1oiuwns7jp" path="res://menu/font/BoldPixels.otf" id="6_gtaip"]
+[ext_resource type="Texture2D" uid="uid://dy8jfnq46xfdh" path="res://assets/menu/Sprites/UI_NoteBook_Button01a.png" id="7_s018q"]
+[ext_resource type="Texture2D" uid="uid://2poclyn3dknq" path="res://assets/menu/Sprites/UI_NoteBook_Banner01a.png" id="8_4gwse"]
+
+[node name="CookingScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="EffectBanner" type="TextureRect" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 1223.0
+offset_top = 192.0
+offset_right = 1269.0
+offset_bottom = 211.0
+scale = Vector2(5, 5)
+texture = ExtResource("2_n4nc6")
+stretch_mode = 4
+
+[node name="EffectText" type="Label" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 1259.0
+offset_top = 209.0
+offset_right = 1446.0
+offset_bottom = 272.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_constants/line_spacing = -5
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 32
+text = ""
+autowrap_mode = 3
+
+[node name="LeftPage" type="TextureRect" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 409.0
+offset_top = 176.0
+offset_right = 513.0
+offset_bottom = 323.0
+scale = Vector2(5, 5)
+texture = ExtResource("2_tggj5")
+
+[node name="PrevPage" type="TextureButton" parent="LeftPage"]
+layout_mode = 0
+offset_left = 2.3999996
+offset_top = 132.59999
+offset_right = 12.4
+offset_bottom = 138.59999
+texture_normal = ExtResource("3_n4nc6")
+flip_h = true
+
+[node name="RightPage" type="TextureRect" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 929.0
+offset_top = 176.0
+offset_right = 1033.0
+offset_bottom = 323.0
+scale = Vector2(5, 5)
+texture = ExtResource("4_v8byu")
+
+[node name="NextPage" type="TextureButton" parent="RightPage"]
+layout_mode = 0
+offset_left = 91.99999
+offset_top = 132.8
+offset_right = 101.99999
+offset_bottom = 138.8
+texture_normal = ExtResource("3_n4nc6")
+
+[node name="LeftPageContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 442.0
+offset_top = 214.0
+offset_right = 916.0
+offset_bottom = 842.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="LeftPageContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="Fish Icon" type="VBoxContainer" parent="LeftPageContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="LeftPageContainer/HBoxContainer/Fish Icon"]
+texture_filter = 3
+custom_minimum_size = Vector2(158, 0)
+layout_mode = 2
+texture = ExtResource("5_14k1h")
+expand_mode = 5
+stretch_mode = 4
+
+[node name="Quality+Fish" type="Label" parent="LeftPageContainer/HBoxContainer/Fish Icon"]
+texture_filter = 3
+layout_mode = 2
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 16
+text = "Pristine Kelp Bass"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="LeftPageContainer/HBoxContainer/Fish Icon/Quality+Fish"]
+layout_mode = 0
+offset_top = 17.0
+offset_right = 156.0
+offset_bottom = 45.0
+
+[node name="EatButton" type="TextureButton" parent="LeftPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+texture_normal = ExtResource("7_s018q")
+stretch_mode = 0
+
+[node name="EatText" type="Label" parent="LeftPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer/EatButton"]
+texture_filter = 3
+layout_mode = 0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 72.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 16
+text = "Eat"
+horizontal_alignment = 1
+
+[node name="CookButton" type="TextureButton" parent="LeftPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+texture_normal = ExtResource("7_s018q")
+stretch_mode = 0
+
+[node name="CookText" type="Label" parent="LeftPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer/CookButton"]
+texture_filter = 3
+layout_mode = 0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 72.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 16
+text = "Cook ()"
+horizontal_alignment = 1
+
+[node name="Banner" type="TextureRect" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 653.0
+offset_top = 88.0
+offset_right = 778.6
+offset_bottom = 128.0
+scale = Vector2(4.4, 4.4)
+texture = ExtResource("8_4gwse")
+
+[node name="Cooking Title" type="Label" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 758.0
+offset_top = 104.0
+offset_right = 1100.0
+offset_bottom = 195.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 90
+text = "Cookbook"
+horizontal_alignment = 1
+
+[node name="RightPageContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_left = 950.0
+offset_top = 214.0
+offset_right = 1424.0
+offset_bottom = 842.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RightPageContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="Fish Icon" type="VBoxContainer" parent="RightPageContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="RightPageContainer/HBoxContainer/Fish Icon"]
+texture_filter = 3
+custom_minimum_size = Vector2(158, 0)
+layout_mode = 2
+texture = ExtResource("5_14k1h")
+expand_mode = 5
+stretch_mode = 4
+
+[node name="Quality+Fish" type="Label" parent="RightPageContainer/HBoxContainer/Fish Icon"]
+texture_filter = 3
+layout_mode = 2
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 16
+text = "Pristine Kelp Bass"
+horizontal_alignment = 1
+
+[node name="HBoxContainer" type="HBoxContainer" parent="RightPageContainer/HBoxContainer/Fish Icon/Quality+Fish"]
+layout_mode = 0
+offset_top = 17.0
+offset_right = 156.0
+offset_bottom = 45.0
+
+[node name="EatButton" type="TextureButton" parent="RightPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+texture_normal = ExtResource("7_s018q")
+stretch_mode = 0
+
+[node name="EatText" type="Label" parent="RightPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer/EatButton"]
+texture_filter = 3
+layout_mode = 0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 72.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 16
+text = "Eat"
+horizontal_alignment = 1
+
+[node name="CookButton" type="TextureButton" parent="RightPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer"]
+custom_minimum_size = Vector2(75, 0)
+layout_mode = 2
+texture_normal = ExtResource("7_s018q")
+stretch_mode = 0
+
+[node name="CookText" type="Label" parent="RightPageContainer/HBoxContainer/Fish Icon/Quality+Fish/HBoxContainer/CookButton"]
+texture_filter = 3
+layout_mode = 0
+offset_left = 3.0
+offset_top = 3.0
+offset_right = 72.0
+offset_bottom = 19.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 16
+text = "Cook ()"
+horizontal_alignment = 1
+
+[node name="CowriesLabel" type="Label" parent="."]
+texture_filter = 3
+layout_mode = 0
+offset_left = 1285.0
+offset_top = 146.0
+offset_right = 1449.0
+offset_bottom = 178.0
+theme_override_colors/font_color = Color(0.9137255, 0.80784315, 0.6784314, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 32
+text = "Cowries: 10"
+horizontal_alignment = 2
+
+[node name="CloseButton" type="Button" parent="."]
+z_index = 25
+texture_filter = 3
+layout_mode = 0
+offset_left = 1400.0
+offset_top = 176.0
+offset_right = 1451.0
+offset_bottom = 232.0
+theme_override_colors/font_color = Color(0.03529412, 0.13725491, 0.27058825, 1)
+theme_override_fonts/font = ExtResource("6_gtaip")
+theme_override_font_sizes/font_size = 48
+text = "X"
