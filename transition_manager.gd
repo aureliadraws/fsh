@@ -131,12 +131,26 @@ func flash(color: Color = Color.WHITE, duration: float = 0.1) -> void:
 
 
 ## Shake effect (call on target node)
+## Fixed to prevent infinite loops if node processing is disabled
 static func shake(node: Node2D, intensity: float = 10.0, duration: float = 0.3) -> void:
+	# Safety check: ensure node exists
+	if not is_instance_valid(node):
+		return
+
 	var original_pos := node.position
-	var elapsed := 0.0
 	
-	while elapsed < duration:
-		var progress := elapsed / duration
+	# Use system time instead of delta accumulation
+	# This prevents infinite loops if the node is paused or timescale is 0
+	var start_time := Time.get_ticks_msec()
+	var duration_ms := duration * 1000.0
+	
+	while (Time.get_ticks_msec() - start_time) < duration_ms:
+		# Always check if node was freed during the wait
+		if not is_instance_valid(node) or not node.is_inside_tree():
+			return
+			
+		var elapsed_ms = Time.get_ticks_msec() - start_time
+		var progress := clampf(elapsed_ms / duration_ms, 0.0, 1.0)
 		var current_intensity := intensity * (1.0 - progress)
 		
 		node.position = original_pos + Vector2(
@@ -144,7 +158,9 @@ static func shake(node: Node2D, intensity: float = 10.0, duration: float = 0.3) 
 			randf_range(-current_intensity, current_intensity)
 		)
 		
+		# Wait for next frame
 		await node.get_tree().process_frame
-		elapsed += node.get_process_delta_time()
 	
-	node.position = original_pos
+	# Restore position
+	if is_instance_valid(node):
+		node.position = original_pos
