@@ -2025,14 +2025,24 @@ func _animate_card_selected(card: Node, selected: bool) -> void:
 func _start_idle_animation(card: Node) -> void:
 	if not is_instance_valid(card): return
 	_stop_idle_animation(card)
+	
+	# Check if the card is a compatible type (Node2D or Control)
+	# If not, return early to avoid creating an empty infinite loop
+	if not (card is Node2D or card is Control):
+		return
+
 	var tween := create_tween()
 	tween.set_loops()
+	
 	var float_amount := randf_range(3.0, 6.0)
 	var float_duration := randf_range(2.0, 3.0)
-	if card is Node2D:
-		var base_y: float = card.position.y
-		tween.tween_property(card, "position:y", base_y - float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-		tween.tween_property(card, "position:y", base_y + float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
+	# Both Node2D and Control have the 'position' property
+	var base_y: float = card.position.y
+	
+	tween.tween_property(card, "position:y", base_y - float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(card, "position:y", base_y + float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	
 	idle_tween_map[card] = tween
 
 func _start_idle_animation_delayed(card: Node, delay: float) -> void:
