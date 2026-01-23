@@ -2024,27 +2024,24 @@ func _start_idle_animation(card: Node) -> void:
 		
 	_stop_idle_animation(card)
 	
-	# DEBUG: Print the type to verify what we are dealing with
+	# GUARD: Ensure we don't create a loop on an unsupported type
 	if not (card is Node2D or card is Control):
-		print("ERROR: _start_idle_animation called on unsupported type: ", card.get_class())
 		return
 
-	# SAFETY CHECK: Both Node2D and Control have a 'position' property.
-	# We guard against creating the tween if we can't animate it.
-	if "position" not in card:
-		print("ERROR: Card has no position property, skipping idle animation.")
+	# GUARD: Ensure the card has a position property we can animate
+	if not "position" in card:
 		return
 
-	var tween := create_tween()
+	# CRITICAL FIX: Bind the tween to the CARD, not 'self'.
+	# This ensures if the card is freed (died), the tween dies with it.
+	var tween := card.create_tween()
 	tween.set_loops()
 	
 	var float_amount := randf_range(3.0, 6.0)
 	var float_duration := randf_range(2.0, 3.0)
 	
-	# Store base_y from the card's current position
 	var base_y: float = card.position.y
 	
-	# Apply animation regardless of whether it is Node2D or Control
 	tween.tween_property(card, "position:y", base_y - float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	tween.tween_property(card, "position:y", base_y + float_amount, float_duration).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	
