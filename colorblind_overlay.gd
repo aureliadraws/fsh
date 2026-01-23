@@ -3,6 +3,7 @@ extends CanvasLayer
 ## Add this as an autoload or instantiate in your main scene
 
 var filter_rect: ColorRect
+var back_buffer: BackBufferCopy  # Added BackBufferCopy reference
 var shader_material: ShaderMaterial
 var shader_loaded: bool = false
 
@@ -16,8 +17,15 @@ const COLORBLIND_MODES := {
 
 
 func _ready() -> void:
-	# Set to render on top of everything
-	layer = 100
+	# FIX 1: Increase layer to 128 (Godot's standard max) to cover almost all other UI
+	layer = 128
+	
+	# FIX 2: Create a BackBufferCopy to capture the screen.
+	# This fixes the "blank color" issue by ensuring the shader has a valid screen texture to read.
+	back_buffer = BackBufferCopy.new()
+	back_buffer.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
+	back_buffer.rect = Rect2(0, 0, 2000, 2000) # Ensure it covers the screen area
+	add_child(back_buffer)
 	
 	# Create the filter ColorRect
 	filter_rect = ColorRect.new()
@@ -26,10 +34,6 @@ func _ready() -> void:
 	
 	# Set size to cover entire viewport
 	filter_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
-	filter_rect.offset_left = 0
-	filter_rect.offset_top = 0
-	filter_rect.offset_right = 0
-	filter_rect.offset_bottom = 0
 	
 	# IMPORTANT: Start invisible until shader is confirmed working
 	filter_rect.visible = false
@@ -55,10 +59,10 @@ func _ready() -> void:
 		filter_rect.material = shader_material
 		shader_loaded = true
 	else:
-		# No shader found - colorblind mode will be disabled
 		push_warning("[ColorblindOverlay] Colorblind shader not found - feature disabled")
 		shader_loaded = false
 	
+	# Add filter_rect AFTER the back_buffer so it can read the captured screen
 	add_child(filter_rect)
 	
 	# Apply initial settings only if shader loaded
@@ -76,7 +80,6 @@ func _on_settings_changed(category: String) -> void:
 
 
 func _update_colorblind_mode() -> void:
-	# Don't do anything if shader didn't load
 	if not shader_loaded:
 		return
 	
@@ -96,12 +99,14 @@ func _update_colorblind_mode() -> void:
 	# Show/hide filter based on mode
 	if filter_rect:
 		filter_rect.visible = (mode_value != 0)
+		# Toggle back buffer too to save performance when not in use
+		if back_buffer:
+			back_buffer.visible = (mode_value != 0)
 		print("[ColorblindOverlay] Filter visible: ", filter_rect.visible)
 
 
 ## Manually set colorblind mode (for testing)
 func set_mode(mode_name: String) -> void:
-	# Don't do anything if shader didn't load
 	if not shader_loaded:
 		return
 	
@@ -114,3 +119,5 @@ func set_mode(mode_name: String) -> void:
 	
 	if filter_rect:
 		filter_rect.visible = (mode_value != 0)
+		if back_buffer:
+			back_buffer.visible = (mode_value != 0)

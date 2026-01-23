@@ -1232,6 +1232,7 @@ func _show_turn_banner(turn: int) -> void:
 
 func _add_combat_log(text: String) -> void:
 	if not combat_log_container: return
+	
 	var label := Label.new()
 	label.text = text
 	if incoming_fish_font:
@@ -1239,9 +1240,15 @@ func _add_combat_log(text: String) -> void:
 	label.add_theme_font_size_override("font_size", 16)
 	label.modulate.a = 0
 	combat_log_container.add_child(label)
+	
 	create_tween().tween_property(label, "modulate:a", 1.0, 0.2)
+	
+	# FIX: Use remove_child to update child count immediately to prevent infinite loop
 	while combat_log_container.get_child_count() > 8:
-		combat_log_container.get_child(0).queue_free()
+		var child_to_remove = combat_log_container.get_child(0)
+		combat_log_container.remove_child(child_to_remove) # Removes from tree instantly
+		child_to_remove.queue_free() # Schedules memory cleanup
+		
 	_auto_fade_log_entry(label)
 
 func _auto_fade_log_entry(label: Label) -> void:
