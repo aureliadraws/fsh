@@ -23,6 +23,9 @@ extends Control
 @onready var bait_number_label: Label = find_child("BaitNumber", true, false)
 @onready var line_strength_label: Label = find_child("LineStrength", true, false)
 
+var _hook_label_base_y: float = 0.0
+var _end_turn_label_base_y: float = 0.0
+
 # Button sub-labels (assigned in _ready)
 var hook_button_label: Label
 var end_turn_button_label: Label
@@ -72,13 +75,11 @@ var _placement_ghost: Node = null
 var _last_mouse_pos: Vector2 = Vector2.ZERO
 
 func _ready() -> void:
-	# 1. Load Resources
+	# Load Resources (Keep your existing resource loading code here if needed)
 	for path in ["res://scenes/roguelike/card layout.tscn", "res://scenes/menus/card layout.tscn"]:
 		if ResourceLoader.exists(path):
 			CARD_SCENE = load(path)
 			break
-	if not CARD_SCENE:
-		push_error("BattleBoardUI: Could not find card layout scene!")
 	
 	if ResourceLoader.exists("res://menu/font/BoldPixels.otf"):
 		incoming_fish_font = load("res://menu/font/BoldPixels.otf")
@@ -91,13 +92,11 @@ func _ready() -> void:
 	if ResourceLoader.exists("res://assets/ui/UI_NoteBook_Button01c.png"):
 		btn_tex_click = load("res://assets/ui/UI_NoteBook_Button01c.png")
 
-	# 2. Clear & Setup Containers
-	if opponents_hbox:
-		for child in opponents_hbox.get_children(): child.queue_free()
-	if home_cards_hbox:
-		for child in home_cards_hbox.get_children(): child.queue_free()
-	if hand_hbox:
-		for child in hand_hbox.get_children(): child.queue_free()
+	# Clear Containers
+	if opponents_hbox: for child in opponents_hbox.get_children(): child.queue_free()
+	if home_cards_hbox: for child in home_cards_hbox.get_children(): child.queue_free()
+	if hand_hbox: for child in hand_hbox.get_children(): child.queue_free()
+		
 	if opponents_hbox: opponents_hbox.add_theme_constant_override("separation", 20)
 	if home_cards_hbox: home_cards_hbox.add_theme_constant_override("separation", 20)
 	if hand_hbox: hand_hbox.add_theme_constant_override("separation", 15)
@@ -109,66 +108,75 @@ func _ready() -> void:
 		home_cards_hbox.mouse_filter = Control.MOUSE_FILTER_STOP
 		home_cards_hbox.gui_input.connect(_on_home_area_click)
 
-	# 3. Setup New Buttons
+	# --- NEW BUTTON SETUP ---
+	
+	# Hook Button
 	if hook_button:
-		# Find the label inside the button (assuming named 'HookLabel' or just 'Label')
 		hook_button_label = hook_button.get_node_or_null("HookLabel")
-		if not hook_button_label: hook_button_label = hook_button.get_node_or_null("Label")
-		_setup_custom_button(hook_button, hook_button_label, _on_hook_pressed)
+		if hook_button_label:
+			# 1. Remember the original Y position from the .tscn (17.0)
+			_hook_label_base_y = hook_button_label.position.y
+			# 2. Make label ignore mouse so the button underneath catches the click
+			hook_button_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			
+			_setup_custom_button(hook_button, hook_button_label, _on_hook_pressed, _hook_label_base_y)
 
+	# End Turn Button
 	if end_turn_button:
-		end_turn_button_label = end_turn_button.get_node_or_null("Label")
-		if not end_turn_button_label: end_turn_button_label = find_child("EndTurnLabel", true, false)
-		_setup_custom_button(end_turn_button, end_turn_button_label, _on_end_turn_pressed)
+		end_turn_button_label = end_turn_button.get_node_or_null("EndTurnLabel")
+		if end_turn_button_label:
+			# 1. Remember the original Y position from the .tscn (17.0)
+			_end_turn_label_base_y = end_turn_button_label.position.y
+			# 2. Make label ignore mouse so the button underneath catches the click
+			end_turn_button_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			
+			_setup_custom_button(end_turn_button, end_turn_button_label, _on_end_turn_pressed, _end_turn_label_base_y)
 
-	# 4. Final Setup
+	# --- HUD LABELS SETUP (Paths from your .tscn) ---
+	turn_number_label = get_node_or_null("MatchInfo/TurnIcon/TurnNumber")
+	health_number_label = get_node_or_null("MatchInfo/HealthIcon/HealthNumber")
+	bait_number_label = get_node_or_null("MatchInfo/BaitIcon/BaitNumber")
+	line_strength_label = get_node_or_null("Options/OptionsVBoxContainer/HookButton/LineStrength")
+
+	# Final Setup
 	_setup_combat_text_layer()
-	# Removed _setup_hud() call as we use new nodes now
 	_setup_minigame_layering()
 	call_deferred("_connect_signals")
 	set_process(true)
 	set_process_input(true)
 
 # --- CUSTOM BUTTON LOGIC ---
-func _setup_custom_button(btn: TextureButton, lbl: Label, callback: Callable) -> void:
+func _setup_custom_button(btn: TextureButton, lbl: Label, callback: Callable, base_y: float) -> void:
 	if not btn: return
 	
-	# CRITICAL FIX: Make sure label doesn't block mouse events for the button
-	if lbl:
-		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		# Ensure centering behavior
-		lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
-		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# CRITICAL: Mouse Filter must be Ignore so the button underneath gets the signal
+	if lbl: lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	
 	# Set textures
 	if btn_tex_normal: btn.texture_normal = btn_tex_normal
 	if btn_tex_hover: btn.texture_hover = btn_tex_hover
 	if btn_tex_click: btn.texture_pressed = btn_tex_click
 	
-	# Connect click
+	# Connect interaction
 	if not btn.pressed.is_connected(callback):
 		btn.pressed.connect(callback)
 	
-	# Connect hover/click animations
-	btn.mouse_entered.connect(func(): _animate_button_text(btn, lbl, 5))   # Down 5px on hover
-	btn.mouse_exited.connect(func(): _animate_button_text(btn, lbl, 0))    # Reset to 0 offset on exit
-	btn.button_down.connect(func(): _animate_button_text(btn, lbl, 10))    # Down 10px on click
-	btn.button_up.connect(func(): _animate_button_text(btn, lbl, 5 if btn.is_hovered() else 0))
+	# Connect hover/click animations using the stored base_y
+	btn.mouse_entered.connect(func(): _animate_button_text(btn, lbl, 5, base_y))
+	btn.mouse_exited.connect(func(): _animate_button_text(btn, lbl, 0, base_y))
+	btn.button_down.connect(func(): _animate_button_text(btn, lbl, 10, base_y))
+	btn.button_up.connect(func(): _animate_button_text(btn, lbl, 5 if btn.is_hovered() else 0, base_y))
 
-func _animate_button_text(btn: TextureButton, lbl: Label, y_offset: int) -> void:
+func _animate_button_text(btn: TextureButton, lbl: Label, offset: int, base_y: float) -> void:
 	if not lbl or not btn: return
 	
-	# Calculate the vertical center of the button relative to the label size
-	var center_y = (btn.size.y - lbl.size.y) / 2
-	
-	# If disabled, keep centered (or default position) without offset
+	# If disabled, stick to original position
 	if btn.disabled:
-		lbl.position.y = center_y
+		lbl.position.y = base_y
 		return
 
-	# Apply offset to the center position
-	lbl.position.y = center_y + y_offset
+	# Apply offset to the ORIGINAL position
+	lbl.position.y = base_y + offset
 
 # Process for reliable hand card hover detection
 func _process(_delta: float) -> void:
@@ -560,15 +568,14 @@ func _animate_deck_draw(is_salvage: bool) -> void:
 func _on_draw_state_changed(can_draw: bool) -> void:
 	_update_deck_visuals(can_draw)
 	
-	# --- NEW: End Turn Button Logic ---
 	if end_turn_button:
 		if can_draw:
-			# Player can still draw, so they shouldn't end turn yet
 			end_turn_button.disabled = true
 			if end_turn_button_label:
 				end_turn_button_label.modulate = COL_DISABLED
+				# Reset pos to base_y
+				end_turn_button_label.position.y = _end_turn_label_base_y
 		else:
-			# Player has drawn or cannot draw, enable End Turn
 			end_turn_button.disabled = false
 			if end_turn_button_label:
 				end_turn_button_label.modulate = COL_NORMAL
@@ -1237,33 +1244,30 @@ func _update_hook_button() -> void:
 		hook_button.disabled = false
 		if hook_button_label:
 			hook_button_label.text = "SELECT FISH" if hook_mode else "HOOK"
-			# Set Aquatic Kelp Green when ready
 			hook_button_label.add_theme_color_override("font_color", COL_KELP_GREEN)
 	else:
-		var cd: int = battle_manager.get_hook_cooldown()
 		hook_button.disabled = true
+		var cd = battle_manager.get_hook_cooldown()
 		if hook_button_label:
-			hook_button_label.text = "HOOK"
-			# Optional: Show cooldown in text or leave as just HOOK
-			if cd > 0: hook_button_label.text = "HOOK (%d)" % cd
+			hook_button_label.text = "HOOK (%d)" % cd if cd > 0 else "HOOK"
 			hook_button_label.add_theme_color_override("font_color", COL_DISABLED)
+			# Reset position if disabled
+			hook_button_label.position.y = _hook_label_base_y
 
 func _update_hud() -> void:
 	if not battle_manager: return
 	
-	# New HUD Updates
-	if turn_number_label:
+	if turn_number_label: 
 		turn_number_label.text = str(battle_manager.turn_number)
 	
-	if health_number_label:
-		# Format as ?/?
+	if health_number_label: 
 		health_number_label.text = "%d/%d" % [battle_manager.boat_hp, battle_manager.max_boat_hp]
 		
-	if bait_number_label:
+	if bait_number_label: 
 		bait_number_label.text = str(battle_manager.bait)
-	
-	if line_strength_label:
-		# Format as <= STRENGTH (Symbol only)
+		
+	if line_strength_label: 
+		# Format as <=Number (no space)
 		var rod_str = battle_manager.get_rod_strength()
 		line_strength_label.text = "≤%d" % rod_str
 
