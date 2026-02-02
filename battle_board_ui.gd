@@ -6,11 +6,31 @@ extends Control
 @onready var opponents_hbox: HBoxContainer = $CardsInPlay/CardsVBoxContainer/Opponents
 @onready var home_cards_hbox: HBoxContainer = $CardsInPlay/CardsVBoxContainer/HomeCards
 @onready var hand_hbox: HBoxContainer = $CardHandContainer/"Card Hand"
-@onready var hook_button: Button = $Options/OptionsVBoxContainer/Hook
-@onready var end_turn_button: Button = $Options/OptionsVBoxContainer/EndTurn
+
+# --- NEW NODE REFERENCES ---
+# We use get_node_or_null or find_child to locate your new buttons/labels
 @onready var salvage_node = $Options/OptionsVBoxContainer/Decks/Salvage
 @onready var chum_node = $Options/OptionsVBoxContainer/Decks/Chum
 @onready var area_label: Label = $Label
+
+# Search for the new buttons by name, falling back to path if needed
+@onready var hook_button: TextureButton = find_child("HookButton", true, false)
+@onready var end_turn_button: TextureButton = find_child("EndTurnButton", true, false)
+
+# Search for the new HUD labels
+@onready var turn_number_label: Label = find_child("TurnNumber", true, false)
+@onready var health_number_label: Label = find_child("HealthNumber", true, false)
+@onready var bait_number_label: Label = find_child("BaitNumber", true, false)
+@onready var line_strength_label: Label = find_child("LineStrength", true, false)
+
+# Button sub-labels (assigned in _ready)
+var hook_button_label: Label
+var end_turn_button_label: Label
+
+# Textures for button states
+var btn_tex_normal: Texture2D
+var btn_tex_hover: Texture2D
+var btn_tex_click: Texture2D
 
 var CARD_SCENE: PackedScene
 var fish_cards: Array = []
@@ -29,14 +49,15 @@ const CARD_W := 254.0
 const CARD_H := 348.0
 const HAND_HOVER_LIFT := 50.0
 const HAND_BASE_Y := 80.0  # Higher up from bottom
-const CARD_SPACING_HAND := -120.0  # More overlap for realistic hand (increased from -100)
+const CARD_SPACING_HAND := -120.0  # More overlap for realistic hand
 const CARD_SPACING_BOARD := 20.0
 const HAND_MAX_ROTATION := 12.0  # Max rotation in degrees for outer cards
 
-var combat_log_container: VBoxContainer
-var turn_label: Label
-var bait_label: Label
-var boat_hp_label: Label
+# Colors
+const COL_KELP_GREEN := Color(0.30, 0.55, 0.34) # Aquatic Kelp Green
+const COL_DISABLED := Color(0.5, 0.5, 0.5)
+const COL_NORMAL := Color.WHITE
+
 var combat_text_layer: CanvasLayer
 var idle_tween_map: Dictionary = {}
 var hover_tween_map: Dictionary = {}
@@ -47,7 +68,11 @@ var _hovered_hand_index: int = -1
 var _placement_preview_slot: int = -1
 var _placement_ghost: Node = null
 
+# Input tracking
+var _last_mouse_pos: Vector2 = Vector2.ZERO
+
 func _ready() -> void:
+	# 1. Load Resources
 	for path in ["res://scenes/roguelike/card layout.tscn", "res://scenes/menus/card layout.tscn"]:
 		if ResourceLoader.exists(path):
 			CARD_SCENE = load(path)
@@ -55,10 +80,18 @@ func _ready() -> void:
 	if not CARD_SCENE:
 		push_error("BattleBoardUI: Could not find card layout scene!")
 	
-	# Load font for incoming fish indicators
 	if ResourceLoader.exists("res://menu/font/BoldPixels.otf"):
 		incoming_fish_font = load("res://menu/font/BoldPixels.otf")
-	
+		
+	# Load Button Textures
+	if ResourceLoader.exists("res://assets/ui/UI_NoteBook_Button01a.png"):
+		btn_tex_normal = load("res://assets/ui/UI_NoteBook_Button01a.png")
+	if ResourceLoader.exists("res://assets/ui/UI_NoteBook_Button01b.png"):
+		btn_tex_hover = load("res://assets/ui/UI_NoteBook_Button01b.png")
+	if ResourceLoader.exists("res://assets/ui/UI_NoteBook_Button01c.png"):
+		btn_tex_click = load("res://assets/ui/UI_NoteBook_Button01c.png")
+
+	# 2. Clear & Setup Containers
 	if opponents_hbox:
 		for child in opponents_hbox.get_children(): child.queue_free()
 	if home_cards_hbox:
@@ -68,23 +101,76 @@ func _ready() -> void:
 	if opponents_hbox: opponents_hbox.add_theme_constant_override("separation", 20)
 	if home_cards_hbox: home_cards_hbox.add_theme_constant_override("separation", 20)
 	if hand_hbox: hand_hbox.add_theme_constant_override("separation", 15)
+	
 	_setup_deck_click(salvage_node, true)
 	_setup_deck_click(chum_node, false)
+	
 	if home_cards_hbox:
 		home_cards_hbox.mouse_filter = Control.MOUSE_FILTER_STOP
 		home_cards_hbox.gui_input.connect(_on_home_area_click)
-	if hook_button: hook_button.pressed.connect(_on_hook_pressed)
-	if end_turn_button: end_turn_button.pressed.connect(_on_end_turn_pressed)
+
+	# 3. Setup New Buttons
+	if hook_button:
+		# Find the label inside the button (assuming named 'HookLabel' or just 'Label')
+		hook_button_label = hook_button.get_node_or_null("HookLabel")
+		if not hook_button_label: hook_button_label = hook_button.get_node_or_null("Label")
+		_setup_custom_button(hook_button, hook_button_label, _on_hook_pressed)
+
+	if end_turn_button:
+		end_turn_button_label = end_turn_button.get_node_or_null("Label")
+		if not end_turn_button_label: end_turn_button_label = find_child("EndTurnLabel", true, false)
+		_setup_custom_button(end_turn_button, end_turn_button_label, _on_end_turn_pressed)
+
+	# 4. Final Setup
 	_setup_combat_text_layer()
-	_setup_hud()
+	# Removed _setup_hud() call as we use new nodes now
 	_setup_minigame_layering()
 	call_deferred("_connect_signals")
 	set_process(true)
 	set_process_input(true)
 
-# Process for reliable hand card hover detection
-var _last_mouse_pos: Vector2 = Vector2.ZERO
+# --- CUSTOM BUTTON LOGIC ---
+func _setup_custom_button(btn: TextureButton, lbl: Label, callback: Callable) -> void:
+	if not btn: return
+	
+	# CRITICAL FIX: Make sure label doesn't block mouse events for the button
+	if lbl:
+		lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		# Ensure centering behavior
+		lbl.set_anchors_preset(Control.PRESET_FULL_RECT)
+		lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lbl.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	
+	# Set textures
+	if btn_tex_normal: btn.texture_normal = btn_tex_normal
+	if btn_tex_hover: btn.texture_hover = btn_tex_hover
+	if btn_tex_click: btn.texture_pressed = btn_tex_click
+	
+	# Connect click
+	if not btn.pressed.is_connected(callback):
+		btn.pressed.connect(callback)
+	
+	# Connect hover/click animations
+	btn.mouse_entered.connect(func(): _animate_button_text(btn, lbl, 5))   # Down 5px on hover
+	btn.mouse_exited.connect(func(): _animate_button_text(btn, lbl, 0))    # Reset to 0 offset on exit
+	btn.button_down.connect(func(): _animate_button_text(btn, lbl, 10))    # Down 10px on click
+	btn.button_up.connect(func(): _animate_button_text(btn, lbl, 5 if btn.is_hovered() else 0))
 
+func _animate_button_text(btn: TextureButton, lbl: Label, y_offset: int) -> void:
+	if not lbl or not btn: return
+	
+	# Calculate the vertical center of the button relative to the label size
+	var center_y = (btn.size.y - lbl.size.y) / 2
+	
+	# If disabled, keep centered (or default position) without offset
+	if btn.disabled:
+		lbl.position.y = center_y
+		return
+
+	# Apply offset to the center position
+	lbl.position.y = center_y + y_offset
+
+# Process for reliable hand card hover detection
 func _process(_delta: float) -> void:
 	# Safety check - don't process if we're being freed
 	if not is_inside_tree():
@@ -92,7 +178,7 @@ func _process(_delta: float) -> void:
 	
 	# Only update hover when mouse has moved to avoid unnecessary computation
 	var current_mouse_pos := get_global_mouse_position()
-	if current_mouse_pos.distance_squared_to(_last_mouse_pos) > 1.0:  # More than 1 pixel moved
+	if current_mouse_pos.distance_squared_to(_last_mouse_pos) > 1.0:
 		_last_mouse_pos = current_mouse_pos
 		_update_hand_hover()
 		_update_placement_preview(current_mouse_pos)
@@ -118,45 +204,6 @@ func _setup_combat_text_layer() -> void:
 	container.set_anchors_preset(Control.PRESET_FULL_RECT)
 	container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	combat_text_layer.add_child(container)
-
-func _setup_hud() -> void:
-	var hud_panel := PanelContainer.new()
-	hud_panel.set_anchors_preset(Control.PRESET_TOP_RIGHT)
-	hud_panel.offset_left = -250
-	hud_panel.offset_right = -20
-	hud_panel.offset_top = 20
-	hud_panel.offset_bottom = 140
-	add_child(hud_panel)
-	var vbox := VBoxContainer.new()
-	hud_panel.add_child(vbox)
-	turn_label = Label.new()
-	turn_label.text = "Turn: 1"
-	if incoming_fish_font:
-		turn_label.add_theme_font_override("font", incoming_fish_font)
-	turn_label.add_theme_font_size_override("font_size", 16)
-	vbox.add_child(turn_label)
-	bait_label = Label.new()
-	bait_label.text = "Bait: 0"
-	if incoming_fish_font:
-		bait_label.add_theme_font_override("font", incoming_fish_font)
-	bait_label.add_theme_font_size_override("font_size", 16)
-	bait_label.add_theme_color_override("font_color", Color(1, 0.85, 0.4))
-	vbox.add_child(bait_label)
-	boat_hp_label = Label.new()
-	boat_hp_label.text = "Boat: 3/3"
-	if incoming_fish_font:
-		boat_hp_label.add_theme_font_override("font", incoming_fish_font)
-	boat_hp_label.add_theme_font_size_override("font_size", 16)
-	boat_hp_label.add_theme_color_override("font_color", Color(0.4, 0.8, 1))
-	vbox.add_child(boat_hp_label)
-	combat_log_container = VBoxContainer.new()
-	combat_log_container.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
-	combat_log_container.offset_left = 20
-	combat_log_container.offset_right = 400
-	combat_log_container.offset_top = -200
-	combat_log_container.offset_bottom = -20
-	combat_log_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(combat_log_container)
 
 func _setup_minigame_layering() -> void:
 	if catch_minigame:
@@ -223,9 +270,12 @@ func _setup_deck_click(deck_node: Node, is_salvage: bool) -> void:
 	# Setup click handling on the back
 	if back and back is Control:
 		back.mouse_filter = Control.MOUSE_FILTER_STOP
-		back.gui_input.connect(func(e): _deck_clicked(e, is_salvage))
-		back.mouse_entered.connect(func(): _on_deck_hover(deck_node, true))
-		back.mouse_exited.connect(func(): _on_deck_hover(deck_node, false))
+		if not back.gui_input.is_connected(_deck_clicked):
+			back.gui_input.connect(func(e): _deck_clicked(e, is_salvage))
+		if not back.mouse_entered.is_connected(_on_deck_hover):
+			back.mouse_entered.connect(func(): _on_deck_hover(deck_node, true))
+		if not back.mouse_exited.is_connected(_on_deck_hover):
+			back.mouse_exited.connect(func(): _on_deck_hover(deck_node, false))
 
 # Store references to deck stack nodes for animation
 var salvage_deck_stack: Array = []
@@ -509,7 +559,19 @@ func _animate_deck_draw(is_salvage: bool) -> void:
 
 func _on_draw_state_changed(can_draw: bool) -> void:
 	_update_deck_visuals(can_draw)
-
+	
+	# --- NEW: End Turn Button Logic ---
+	if end_turn_button:
+		if can_draw:
+			# Player can still draw, so they shouldn't end turn yet
+			end_turn_button.disabled = true
+			if end_turn_button_label:
+				end_turn_button_label.modulate = COL_DISABLED
+		else:
+			# Player has drawn or cannot draw, enable End Turn
+			end_turn_button.disabled = false
+			if end_turn_button_label:
+				end_turn_button_label.modulate = COL_NORMAL
 
 func _update_deck_visuals(can_draw: bool) -> void:
 	# Update deck visuals when player can't draw anymore this turn
@@ -571,8 +633,14 @@ func _safe_connect(obj: Object, signal_name: String, method: Callable) -> void:
 		obj.connect(signal_name, method)
 
 func _on_hook_cooldown_tick(_turns: int) -> void: _update_hook_button()
+
+# --- MODIFIED: Font scaling logic ---
 func set_area_name(n: String) -> void:
-	if area_label: area_label.text = n
+	if area_label:
+		area_label.text = n
+		# Shrink font to fit width. Max 82 (default), Min 20.
+		# Assumes Label is properly Anchored/Sized in editor.
+		_auto_scale_label(area_label, area_label.size.x, 82, 20)
 
 func _on_battle_started() -> void:
 	selected_hand_index = -1
@@ -581,7 +649,6 @@ func _on_battle_started() -> void:
 	_previous_hand_size = 0
 	_update_hook_button()
 	_update_hud()
-	_add_combat_log("Battle Started!")
 	
 	# Clear all existing cards from previous battle
 	_clear_all_cards()
@@ -626,27 +693,29 @@ func _on_turn_started(t: int) -> void:
 	_update_hook_button()
 	_update_hud()
 	_show_turn_banner(t)
-	_reenable_end_turn_button()
+	
+	# Update button states based on drawing ability
+	if battle_manager.has_method("can_draw"):
+		_on_draw_state_changed(battle_manager.can_draw())
+	else:
+		_reenable_end_turn_button()
 
-func _on_turn_ended() -> void: _add_combat_log("End of Turn")
+func _on_turn_ended() -> void:
+	pass # Removed log
+
 func _on_board_updated() -> void:
 	_refresh_fish()
 	_refresh_board()
 func _on_hand_updated() -> void: _smart_refresh_hand()
 
-func _on_bait_changed(new_bait: int) -> void:
-	if bait_label:
-		bait_label.text = "Bait: %d" % new_bait
-		var tween := create_tween()
-		tween.tween_property(bait_label, "scale", Vector2(1.2, 1.2), 0.1)
-		tween.tween_property(bait_label, "scale", Vector2.ONE, 0.2)
+func _on_bait_changed(_new_bait: int) -> void:
+	_update_hud() # Bait number needs update
 	# Update hand card playability (gray out cards that need more bait)
 	_update_hand_playability()
 
 func _on_hook_used() -> void:
 	hook_mode = false
 	_update_hook_button()
-	_add_combat_log("Hook cast!")
 
 func _on_catch_qte(_slot: int, fish_data, _line: int) -> void:
 	if catch_minigame and fish_data:
@@ -661,12 +730,10 @@ func _on_catch_completed(success: bool, quality: int) -> void:
 	if catch_minigame: catch_minigame.visible = false
 	if battle_manager: battle_manager.resolve_catch(success, quality)
 	if success:
-		_add_combat_log("Caught! Quality: %d" % quality)
 		# Position caught text above center to avoid overlap with victory
 		var catch_pos := get_viewport_rect().size / 2 - Vector2(0, 100)
 		_spawn_floating_text(catch_pos, "CAUGHT!", Color.GREEN, 48)
 	else:
-		_add_combat_log("Fish escaped!")
 		_spawn_floating_text(get_viewport_rect().size / 2, "ESCAPED!", Color.RED, 48)
 
 func _fade_cards_for_minigame(fade_out: bool) -> void:
@@ -679,16 +746,12 @@ func _fade_cards_for_minigame(fade_out: bool) -> void:
 func _on_battle_won(_c: Array) -> void:
 	if hook_button: hook_button.disabled = true
 	if end_turn_button: end_turn_button.disabled = true
-	_add_combat_log("VICTORY!")
 	# Clear all incoming fish indicators
 	_clear_incoming_fish_indicators()
 	# Delay victory text slightly and position below center
 	if not is_inside_tree():
 		return
-	var tree = get_tree()
-	if tree == null:
-		return
-	await tree.create_timer(0.5).timeout
+	await get_tree().create_timer(0.5).timeout
 	if not is_inside_tree():
 		return
 	var victory_pos := get_viewport_rect().size / 2 + Vector2(0, 50)
@@ -697,7 +760,6 @@ func _on_battle_won(_c: Array) -> void:
 func _on_battle_lost() -> void:
 	if hook_button: hook_button.disabled = true
 	if end_turn_button: end_turn_button.disabled = true
-	_add_combat_log("DEFEAT...")
 	# Clear all incoming fish indicators
 	_clear_incoming_fish_indicators()
 	_spawn_floating_text(get_viewport_rect().size / 2, "DEFEAT!", Color.RED, 64)
@@ -708,7 +770,6 @@ func _on_card_damaged(slot: int, damage: int) -> void:
 		_stop_idle_animation(card)
 		AnimHelper.take_damage(card)
 		_spawn_floating_text_at_node(card, "-%d" % damage, Color.RED)
-		_add_combat_log("Card took %d damage" % damage)
 		
 		# Update the card's Line label to show new health
 		_update_card_health_display(slot)
@@ -741,10 +802,7 @@ func _update_card_health_display(slot: int) -> void:
 		# Safety: store reference and check tree before await
 		if not is_inside_tree():
 			return
-		var tree = get_tree()
-		if tree == null:
-			return
-		await tree.create_timer(0.3).timeout
+		await get_tree().create_timer(0.3).timeout
 		
 		# Safety checks after await
 		if is_instance_valid(line_label) and is_inside_tree():
@@ -753,7 +811,6 @@ func _update_card_health_display(slot: int) -> void:
 func _on_card_destroyed(slot: int) -> void:
 	var card = board_slot_map.get(slot)
 	if card and is_instance_valid(card):
-		_add_combat_log("Card destroyed!")
 		_stop_idle_animation(card)
 		# Remove from map immediately to prevent further access
 		board_slot_map.erase(slot)
@@ -768,7 +825,6 @@ func _on_fish_damaged(slot: int, damage: int) -> void:
 		_stop_idle_animation(card)
 		AnimHelper.take_damage(card)
 		_spawn_floating_text_at_node(card, "-%d" % damage, Color.ORANGE)
-		_add_combat_log("Fish took %d damage" % damage)
 		
 		# Update the fish's Line label to show new health
 		_update_fish_health_display(slot)
@@ -801,10 +857,7 @@ func _update_fish_health_display(slot: int) -> void:
 		# Safety: check tree before await
 		if not is_inside_tree():
 			return
-		var tree = get_tree()
-		if tree == null:
-			return
-		await tree.create_timer(0.3).timeout
+		await get_tree().create_timer(0.3).timeout
 		
 		# Safety checks after await
 		if is_instance_valid(line_label) and is_inside_tree():
@@ -813,7 +866,6 @@ func _update_fish_health_display(slot: int) -> void:
 func _on_fish_destroyed(slot: int) -> void:
 	var card = fish_slot_map.get(slot)
 	if card and is_instance_valid(card):
-		_add_combat_log("Fish caught!")
 		_stop_idle_animation(card)
 		# Remove from map immediately to prevent further access
 		fish_slot_map.erase(slot)
@@ -827,13 +879,10 @@ func _on_fish_destroyed(slot: int) -> void:
 			)
 		else:
 			card.queue_free()
-	else:
-		_add_combat_log("Fish caught!")
 
 func _on_fish_fled(slot: int) -> void:
 	var card = fish_slot_map.get(slot)
 	if card and is_instance_valid(card):
-		_add_combat_log("Fish fled!")
 		_stop_idle_animation(card)
 		# Remove from map immediately to prevent further access
 		fish_slot_map.erase(slot)
@@ -852,17 +901,13 @@ func _on_fish_fled(slot: int) -> void:
 # ============ INCOMING FISH INDICATORS ============
 
 func _on_fish_incoming(slot: int, fish_data) -> void:
-	print("DEBUG UI: _on_fish_incoming called - slot=", slot, " fish_data=", fish_data)
 	# FIXED: Handle null fish_data as signal to clear indicator
 	if fish_data == null:
-		print("DEBUG UI: Clearing indicator for slot ", slot)
 		_remove_incoming_fish_indicator(slot)
-		print("DEBUG UI: Indicators remaining: ", incoming_fish_indicators.keys())
 		return
 	
 	# Only create indicator if one doesn't already exist for this slot
 	if not incoming_fish_indicators.has(slot):
-		print("DEBUG UI: Creating indicator for slot ", slot)
 		_create_incoming_fish_indicator(slot, fish_data)
 
 
@@ -1012,10 +1057,7 @@ func _create_incoming_fish_indicator(slot: int, fish_data: FishData) -> void:
 	# Wait one frame to get proper size, then center the indicator
 	if not is_inside_tree():
 		return
-	var tree = get_tree()
-	if tree == null:
-		return
-	await tree.process_frame
+	await get_tree().process_frame
 	if is_instance_valid(panel) and is_inside_tree():
 		var panel_size: Vector2 = panel.size
 		indicator.global_position = Vector2(indicator_x - panel_size.x / 2.0, indicator_y)
@@ -1052,16 +1094,12 @@ func _add_incoming_fish_shine(indicator: Control, arrow_label: Label, name_label
 			if tween and tween.is_valid(): tween.kill()
 			return
 		var bright := Color(1.0, 0.95, 0.5)
-		# ... rest of your color logic ...
 		arrow_label.add_theme_color_override("font_color", bright)
-		# (Keep your existing color logic here)
 	)
 	
-	# IMPORTANT: These intervals ensure the loop has duration
 	tween.tween_interval(0.3)
 	
 	tween.tween_callback(func():
-		# ... (Keep your existing callback logic here) ...
 		pass 
 	)
 	
@@ -1185,29 +1223,49 @@ func _setup_as_fish_preview(card: Node, fish_data: FishData) -> void:
 
 
 func _on_boat_damaged(new_hp: int) -> void:
-	if boat_hp_label and battle_manager:
-		boat_hp_label.text = "Boat: %d/%d" % [new_hp, battle_manager.max_boat_hp]
-		AnimHelper.shake(boat_hp_label, 5, 0.3)
-		AnimHelper.damage_flash(boat_hp_label, 0.3)
-	_add_combat_log("Boat took damage! HP: %d" % new_hp)
+	_update_hud() # Health changed
+	if health_number_label:
+		AnimHelper.shake(health_number_label, 5, 0.3)
+		AnimHelper.damage_flash(health_number_label, 0.3)
+
+# --- MODIFIED UI UPDATE FUNCTIONS ---
 
 func _update_hook_button() -> void:
 	if not hook_button or not battle_manager: return
+	
 	if battle_manager.can_hook():
 		hook_button.disabled = false
-		hook_button.text = "SELECT FISH" if hook_mode else "HOOK (Ready!)"
-		hook_button.modulate = Color(1.2, 1.2, 0.5) if hook_mode else Color(0.5, 1.0, 0.5)
+		if hook_button_label:
+			hook_button_label.text = "SELECT FISH" if hook_mode else "HOOK"
+			# Set Aquatic Kelp Green when ready
+			hook_button_label.add_theme_color_override("font_color", COL_KELP_GREEN)
 	else:
 		var cd: int = battle_manager.get_hook_cooldown()
 		hook_button.disabled = true
-		hook_button.text = "HOOK (in %d)" % cd if cd > 0 else "HOOK"
-		hook_button.modulate = Color.WHITE
+		if hook_button_label:
+			hook_button_label.text = "HOOK"
+			# Optional: Show cooldown in text or leave as just HOOK
+			if cd > 0: hook_button_label.text = "HOOK (%d)" % cd
+			hook_button_label.add_theme_color_override("font_color", COL_DISABLED)
 
 func _update_hud() -> void:
 	if not battle_manager: return
-	if turn_label: turn_label.text = "Turn: %d" % battle_manager.turn_number
-	if bait_label: bait_label.text = "Bait: %d" % battle_manager.bait
-	if boat_hp_label: boat_hp_label.text = "Boat: %d/%d" % [battle_manager.boat_hp, battle_manager.max_boat_hp]
+	
+	# New HUD Updates
+	if turn_number_label:
+		turn_number_label.text = str(battle_manager.turn_number)
+	
+	if health_number_label:
+		# Format as ?/?
+		health_number_label.text = "%d/%d" % [battle_manager.boat_hp, battle_manager.max_boat_hp]
+		
+	if bait_number_label:
+		bait_number_label.text = str(battle_manager.bait)
+	
+	if line_strength_label:
+		# Format as <= STRENGTH (Symbol only)
+		var rod_str = battle_manager.get_rod_strength()
+		line_strength_label.text = "≤%d" % rod_str
 
 func _show_turn_banner(turn: int) -> void:
 	var banner := Label.new()
@@ -1230,34 +1288,10 @@ func _show_turn_banner(turn: int) -> void:
 	tween.tween_property(banner, "modulate:a", 0.0, 0.3)
 	tween.finished.connect(func(): banner.queue_free())
 
-func _add_combat_log(text: String) -> void:
-	if not combat_log_container: return
-	var label := Label.new()
-	label.text = text
-	if incoming_fish_font:
-		label.add_theme_font_override("font", incoming_fish_font)
-	label.add_theme_font_size_override("font_size", 16)
-	label.modulate.a = 0
-	combat_log_container.add_child(label)
-	create_tween().tween_property(label, "modulate:a", 1.0, 0.2)
-	while combat_log_container.get_child_count() > 8:
-		combat_log_container.get_child(0).queue_free()
-	_auto_fade_log_entry(label)
-
-func _auto_fade_log_entry(label: Label) -> void:
-	if not is_inside_tree():
-		return
-	var tree = get_tree()
-	if tree == null:
-		return
-	await tree.create_timer(5.0).timeout
-	if is_instance_valid(label) and is_inside_tree():
-		var fade := create_tween()
-		if fade:
-			fade.tween_property(label, "modulate:a", 0.0, 0.5)
-			fade.finished.connect(func(): if is_instance_valid(label): label.queue_free())
-
 func _spawn_floating_text(pos: Vector2, text: String, color: Color, size: int = 16) -> void:
+	# Ensure combat text layer exists
+	if not combat_text_layer: _setup_combat_text_layer()
+		
 	var label := Label.new()
 	label.text = text
 	if incoming_fish_font:
@@ -1268,9 +1302,10 @@ func _spawn_floating_text(pos: Vector2, text: String, color: Color, size: int = 
 	label.position = pos - Vector2(100, 20)
 	label.custom_minimum_size = Vector2(200, 40)
 	label.z_index = 100
-	if combat_text_layer and combat_text_layer.get_child_count() > 0:
-		combat_text_layer.get_child(0).add_child(label)
-	else: add_child(label)
+	
+	# Add to the container inside combat text layer
+	combat_text_layer.get_child(0).add_child(label)
+	
 	var tween := create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.tween_property(label, "position:y", pos.y - 80, 0.8)
@@ -1343,11 +1378,7 @@ func _on_all_attacks_finished() -> void:
 		# Small delay before refresh to let death animations complete
 		if not is_inside_tree():
 			return
-		var tree = get_tree()
-		if tree == null:
-			return
-		await tree.create_timer(0.3).timeout
-		# Check again after await
+		await get_tree().create_timer(0.3).timeout
 		if not is_inside_tree() or not battle_manager:
 			return
 		_refresh_fish()
@@ -1769,11 +1800,6 @@ func _animate_card_hover(card: Node, is_hovered: bool, index: int = -1) -> void:
 			if is_instance_valid(card): 
 				_start_idle_animation(card)
 		)
-	if not is_hovered:
-		tween.finished.connect(func(): 
-			if is_instance_valid(card): 
-				_start_idle_animation(card)
-		)
 
 func _stop_hover_animation(card: Node) -> void:
 	if hover_tween_map.has(card):
@@ -2050,10 +2076,7 @@ func _start_idle_animation(card: Node) -> void:
 func _start_idle_animation_delayed(card: Node, delay: float) -> void:
 	if not is_inside_tree():
 		return
-	var tree = get_tree()
-	if tree == null:
-		return
-	await tree.create_timer(delay).timeout
+	await get_tree().create_timer(delay).timeout
 	if is_instance_valid(card) and is_inside_tree(): 
 		_start_idle_animation(card)
 
@@ -2066,7 +2089,6 @@ func _stop_idle_animation(card: Node) -> void:
 # Dissolve shader code - uses screen-space calculation for proper effect
 const DISSOLVE_SHADER_CODE := """
 shader_type canvas_item;
-
 uniform float progress : hint_range(0.0, 1.0) = 0.0;
 uniform float edge_width : hint_range(0.0, 0.2) = 0.05;
 uniform vec4 burn_color : source_color = vec4(1.0, 0.4, 0.1, 1.0);
@@ -2331,6 +2353,9 @@ func _auto_scale_label(label: Label, max_width: float, default_font_size: int = 
 	var font = label.get_theme_font("font")
 	var current_size = default_font_size
 	
+	# Keep position anchored
+	var original_pos = label.position
+	
 	while current_size > min_font_size:
 		var text_width = font.get_string_size(label.text, HORIZONTAL_ALIGNMENT_CENTER, -1, current_size).x
 		if text_width <= max_width:
@@ -2338,6 +2363,7 @@ func _auto_scale_label(label: Label, max_width: float, default_font_size: int = 
 		current_size -= 2
 	
 	label.add_theme_font_size_override("font_size", current_size)
+	label.position = original_pos
 
 func _setup_as_fish(card: Node, fish_inst, slot: int) -> void:
 	if fish_inst == null or fish_inst.data == null: return
@@ -3008,16 +3034,17 @@ func _on_end_turn_pressed() -> void:
 	_hovered_hand_index = -1
 	hook_mode = false
 	_update_hook_button()
+	
 	if end_turn_button:
-		end_turn_button.text = "..."
 		end_turn_button.disabled = true
 	if hook_button:
 		hook_button.disabled = true
+		
 	battle_manager.end_turn()
-	# Button will be re-enabled by _on_all_attacks_finished or turn_started
 
 func _reenable_end_turn_button() -> void:
 	if end_turn_button:
-		end_turn_button.text = "END TURN"
 		end_turn_button.disabled = false
+		if end_turn_button_label:
+			end_turn_button_label.modulate = COL_NORMAL
 	_update_hook_button()
